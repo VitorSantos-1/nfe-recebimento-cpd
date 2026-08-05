@@ -1,0 +1,22 @@
+# Ambiente
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+*.log
+
+# Dados reais / bancos locais
+*.db
+*.sqlite
+*.xlsx
+*.xls
+*.xlsm
+!**/exemplo*.xlsx
+!**/*_exemplo.xlsx
+
+# Build
+dist/
+build/
+*.exe
+*.spec

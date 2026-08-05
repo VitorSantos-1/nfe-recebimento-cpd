@@ -1,0 +1,107 @@
+[
+  {
+    "numero_nf": "25807",
+    "fornecedor": "Fornecedor Alfa",
+    "valor": 10977.25,
+    "data": "2026-08-01",
+    "status": "Divergente"
+  },
+  {
+    "numero_nf": "78291",
+    "fornecedor": "Fornecedor Beta",
+    "valor": 10965.54,
+    "data": "2026-08-01",
+    "status": "Pendente"
+  },
+  {
+    "numero_nf": "18213",
+    "fornecedor": "Fornecedor Delta",
+    "valor": 1805.18,
+    "data": "2026-08-14",
+    "status": "Divergente"
+  },
+  {
+    "numero_nf": "89451",
+    "fornecedor": "Fornecedor Delta",
+    "valor": 11924.88,
+    "data": "2026-08-16",
+    "status": "Pendente"
+  },
+  {
+    "numero_nf": "44766",
+    "fornecedor": "Fornecedor Beta",
+    "valor": 8702.85,
+    "data": "2026-08-21",
+    "status": "Recebido"
+  },
+  {
+    "numero_nf": "49561",
+    "fornecedor": "Fornecedor Alfa",
+    "valor": 13944.03,
+    "data": "2026-08-05",
+    "status": "Recebido"
+  },
+  {
+    "numero_nf": "63877",
+    "fornecedor": "Fornecedor Gama",
+    "valor": 8595.09,
+    "data": "2026-08-25",
+    "status": "Divergente"
+  },
+  {
+    "numero_nf": "61434",
+    "fornecedor": "Fornecedor Alfa",
+    "valor": 5838.45,
+    "data": "2026-08-17",
+    "status": "Recebido"
+  },
+  {
+    "numero_nf": "20342",
+    "fornecedor": "Fornecedor Beta",
+    "valor": 13383.05,
+    "data": "2026-08-15",
+    "status": "Divergente"
+  },
+  {
+    "numero_nf": "71951",
+    "fornecedor": "Fornecedor Gama",
+    "valor": 7976.44,
+    "data": "2026-08-08",
+    "status": "Pendente"
+  },
+  {
+    "numero_nf": "82261",
+    "fornecedor": "Fornecedor Delta",
+    "valor": 4553.39,
+    "data": "2026-08-07",
+    "status": "Pendente"
+  },
+  {
+    "numero_nf": "84999",
+    "fornecedor": "Fornecedor Gama",
+    "valor": 5092.79,
+    "data": "2026-08-19",
+    "status": "Pendente"
+  },
+  {
+    "numero_nf": "73358",
+    "fornecedor": "Fornecedor Delta",
+    "valor": 11411.55,
+    "data": "2026-08-21",
+    "status": "Divergente"
+  },
+  {
+    "numero_nf": "36686",
+    "fornecedor": "Fornecedor Beta",
+    "valor": 14664.09,
+    "data": "2026-08-17",
+    "status": "Recebido"
+  },
+  {
+    "numero_nf": "22412",
+    "fornecedor": "Fornecedor Beta",
+    "valor": 4347.82,
+    "data": "2026-08-25",
+    "status": "Divergente"
+  }
+]

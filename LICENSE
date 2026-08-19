@@ -1,21 +1,32 @@
-MIT License
+Copyright (c) 2026 José Vitor Santos Pinheiro. Todos os direitos reservados. / All rights reserved.
 
-Copyright (c) 2026 José Vitor Santos Pinheiro
+================================================================
+LICENÇA PROPRIETÁRIA — VISUALIZAÇÃO RESTRITA (SOURCE-AVAILABLE)
+================================================================
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Este repositório é disponibilizado publicamente APENAS para fins de
+avaliação técnica e demonstração de portfólio. O código-fonte pode ser
+lido e analisado, mas NÃO é software livre nem de código aberto.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+É EXPRESSAMENTE PROIBIDO, sem autorização PRÉVIA e POR ESCRITO do autor:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+  1. Copiar, reproduzir ou armazenar o código, no todo ou em parte,
+     para qualquer finalidade que não a simples leitura para avaliação;
+  2. Modificar, adaptar ou criar obras derivadas;
+  3. Redistribuir, republicar, sublicenciar ou revender;
+  4. Usar o código, as ideias, a modelagem, a arquitetura ou os
+     conceitos aqui contidos para fins comerciais ou em produtos e
+     serviços próprios ou de terceiros.
+
+Os dados presentes neste repositório são FICTÍCIOS, criados apenas para
+demonstração. As ideias, a modelagem de dados e a lógica de negócio são
+de autoria e propriedade exclusiva de José Vitor Santos Pinheiro.
+
+Para solicitar qualquer autorização de uso, entre em contato:
+  vytorsantt@gmail.com
+
+O SOFTWARE É FORNECIDO "COMO ESTÁ" ("AS IS"), SEM GARANTIAS DE QUALQUER
+NATUREZA, EXPRESSAS OU IMPLÍCITAS. EM NENHUMA HIPÓTESE O AUTOR SERÁ
+RESPONSÁVEL POR QUAISQUER REIVINDICAÇÕES, DANOS OU OUTRAS
+RESPONSABILIDADES DECORRENTES DO USO OU DA IMPOSSIBILIDADE DE USO DESTE
+CÓDIGO.

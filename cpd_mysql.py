@@ -263,7 +263,7 @@ def _seed(conn, cur):
     for st in statuses:
         cur.execute("INSERT IGNORE INTO dim_status (nome_status) VALUES (%s)", (st,))
 
-    # Seed default admin user
+    # Usuário admin de DEMONSTRAÇÃO (troque a senha em produção; use o .env/hash próprio)
     from passlib.hash import sha256_crypt
     cur.execute("SELECT COUNT(*) FROM dim_usuario_cpd WHERE email = %s", ("admin@exemplo.com",))
     if cur.fetchone()[0] == 0:
@@ -271,7 +271,7 @@ def _seed(conn, cur):
         cur.execute("""
             INSERT INTO dim_usuario_cpd (nome, email, senha_hash, cargo, ativo)
             VALUES (%s, %s, %s, %s, 1)
-        """, ("Vitor", "admin@exemplo.com", admin_hash, "ADMIN"))
+        """, ("Administrador", "admin@exemplo.com", admin_hash, "ADMIN"))
 
     ocorrencias = [
         "Divergência de Custo", "Divergência na Quantidade", "Sem XML",

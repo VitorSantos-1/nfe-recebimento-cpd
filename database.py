@@ -278,7 +278,7 @@ def init_db():
         for st in statuses:
             cursor.execute("INSERT OR IGNORE INTO dim_status (nome_status) VALUES (?)", (st,))
 
-        # Seed default admin user
+        # Usuário admin de DEMONSTRAÇÃO (troque a senha em produção; use o .env/hash próprio)
         from passlib.hash import sha256_crypt
         cursor.execute("SELECT COUNT(*) FROM dim_usuario_cpd WHERE email = ?", ("admin@exemplo.com",))
         if cursor.fetchone()[0] == 0:
@@ -286,7 +286,7 @@ def init_db():
             cursor.execute("""
                 INSERT INTO dim_usuario_cpd (nome, email, senha_hash, cargo, ativo)
                 VALUES (?, ?, ?, ?, 1)
-            """, ("Vitor", "admin@exemplo.com", admin_hash, "ADMIN"))
+            """, ("Administrador", "admin@exemplo.com", admin_hash, "ADMIN"))
             
         # Ocorrências (Somente as 14 usadas no mapeamento do script)
         ocorrencias = [

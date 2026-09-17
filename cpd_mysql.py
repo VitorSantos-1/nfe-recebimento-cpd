@@ -248,9 +248,8 @@ def _seed(conn, cur):
         cur.execute("INSERT IGNORE INTO dim_comprador (nome_comprador) VALUES (%s)", (c,))
 
     recebedores = [
-        "Alexandre", "Gustavo", "Rafael", "Tiago", "Vinicius", 
-        "Leonardo", "Marcelo", "Rodrigo", "Anderson", "Ricardo", 
-        "Fernando", "Gabriel"
+        "Alexandre", "Gustavo", "Rafael", "Tiago",
+        "Vinicius", "Leonardo", "Marcelo", "Rodrigo"
     ]
     for r in recebedores:
         cur.execute("INSERT IGNORE INTO dim_recebedor (nome_recebedor) VALUES (%s)", (r,))

@@ -259,11 +259,10 @@ def init_db():
         for c in compradores:
             cursor.execute("INSERT OR IGNORE INTO dim_comprador (nome_comprador) VALUES (?)", (c,))
 
-        # Recebedores (entregadores do print)
+        # Recebedores (nomes fictícios de demonstração)
         recebedores = [
-            "Alexandre", "Gustavo", "Rafael", "Tiago", "Vinicius", 
-            "Leonardo", "Marcelo", "Rodrigo", "Anderson", "Ricardo", 
-            "Fernando", "Gabriel"
+            "Alexandre", "Gustavo", "Rafael", "Tiago",
+            "Vinicius", "Leonardo", "Marcelo", "Rodrigo"
         ]
         for r in recebedores:
             cursor.execute("INSERT OR IGNORE INTO dim_recebedor (nome_recebedor) VALUES (?)", (r,))
@@ -299,7 +298,7 @@ def init_db():
         for oc in ocorrencias:
             cursor.execute("INSERT OR IGNORE INTO dim_ocorrencia (descricao_ocorrencia) VALUES (?)", (oc,))
             
-        # Fornecedores padrão
+        # Fornecedores fictícios de demonstração (CNPJs de exemplo)
         fornecedores = [
             ("DISTRIBUIDORA ALFA LTDA", "Alfa", "11.111.111/0001-11"),
             ("FORNECEDOR BETA S.A.", "Beta", "22.222.222/0001-22"),

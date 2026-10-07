@@ -1,12 +1,14 @@
 import os
 import sys
+import json
 import socket
 import webbrowser
 import threading
 import time
 import sqlite3
 from datetime import datetime
-from typing import Optional
+from types import SimpleNamespace
+from typing import Optional, List
 
 # ─── Correção crítica para PyInstaller --noconsole ────────────────────────────
 class DummyStream:
@@ -26,8 +28,7 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 
 # ─── Auth Config ─────────────────────────────────────────────────────────────
-import os as _os
-SECRET_KEY = _os.getenv("SECRET_KEY", "troque-esta-chave-em-producao")
+SECRET_KEY = "cpd-trabalho-secret-2026"
 ALGORITHM = "HS256"
 # sha256_crypt é pure-Python → sem problemas no PyInstaller
 pwd_ctx = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
@@ -64,6 +65,10 @@ def sql_ph(mode):
     """Retorna placeholder SQL correto por modo de banco."""
     return "%s" if mode == "mysql" else "?"
 
+def sql_insert_ignore(mode):
+    """INSERT que ignora duplicados, na sintaxe de cada banco."""
+    return "INSERT IGNORE" if mode == "mysql" else "INSERT OR IGNORE"
+
 # ─── HTML Path ───────────────────────────────────────────────────────────────
 def get_html_path():
     if hasattr(sys, '_MEIPASS'):
@@ -83,6 +88,13 @@ class CadastroUsuarioInput(BaseModel):
     senha: str
     cargo: Optional[str] = "OPERADOR"
 
+class OcorrenciaItem(BaseModel):
+    """Uma ocorrência (divergência) de uma NF. Uma NF pode ter várias — cada uma vira
+    uma linha em fact_recebimento, com o mesmo topo e divergência própria."""
+    setor_fk: Optional[int] = None
+    ocorrencia_fk: Optional[int] = None
+    resolucao: Optional[str] = None
+
 class RecebimentoInput(BaseModel):
     data: str
     loja_fk: int
@@ -97,7 +109,47 @@ class RecebimentoInput(BaseModel):
     hora_inicio_rec: Optional[str] = None
     hora_final_rec: Optional[str] = None
     sucesso_flag: int = 0
-    status_fk: int
+    # Status é DERIVADO do Resultado no servidor (Recebeu/Não recebeu) — o cliente não
+    # precisa mandar. Opcional só por compatibilidade.
+    status_fk: Optional[int] = None
+    setor_fk: Optional[int] = None
+    ocorrencia_fk: Optional[int] = None
+    resolucao: Optional[str] = None
+    obs: Optional[str] = None
+    # Múltiplas ocorrências numa mesma NF: cada item vira uma linha (mesmo topo, divergência
+    # própria). Quando vazio/ausente, usa setor_fk/ocorrencia_fk/resolucao acima (linha única).
+    ocorrencias: Optional[List[OcorrenciaItem]] = None
+    # Pendência: quando pendente=1, o registro é salvo parcialmente e campos_pendentes
+    # guarda a lista de campos que o CPD deixou em branco para completar depois.
+    pendente: int = 0
+    campos_pendentes: Optional[List[str]] = None
+
+# Ao salvar como Pendente, o "topo" (Data, Loja, NF, Fornecedor, Comprador, Recebedor,
+# Tipo de Entrega/Carga, Chegada e Resultado) é obrigatório. Só os CAMPOS-CRITÉRIO
+# — condicionais ao Resultado — podem ficar em branco e ser completados depois:
+#   • SÓ-RECEBEU  → numa Sucesso (flag != 2): as horas pós-chegada (a descarga vem depois).
+#   • DIVERGÊNCIA → numa Ocorrência Pendente (flag == 2): setor/ocorrência/resolução.
+# Assim, uma Sucesso só deixa pendente as 3 horas; uma Ocorrência só deixa a divergência.
+CAMPOS_SO_RECEBEU  = {"hora_liberado", "hora_inicio_rec", "hora_final_rec"}
+CAMPOS_DIVERGENCIA = {"setor_fk", "ocorrencia_fk", "resolucao"}
+# Universo de campos-critério (usado como fallback / compatibilidade no PUT).
+CAMPOS_COMPLETAVEIS = CAMPOS_SO_RECEBEU | CAMPOS_DIVERGENCIA
+
+def _completaveis_do_registro(sucesso_flag) -> set:
+    """Campos-critério que podem ficar pendentes para este Resultado.
+    flag == 2 = Ocorrência Pendente (divergência); caso contrário = Sucesso (horas)."""
+    return CAMPOS_DIVERGENCIA if int(sucesso_flag or 0) == 2 else CAMPOS_SO_RECEBEU
+
+class RecebimentoUpdateInput(BaseModel):
+    """Complemento de um recebimento pendente — apenas os campos que estavam em branco."""
+    comprador_fk: Optional[int] = None
+    recebedor_fk: Optional[int] = None
+    tipo_entrega: Optional[str] = None
+    tipo_carga: Optional[str] = None
+    hora_chegada: Optional[str] = None
+    hora_liberado: Optional[str] = None
+    hora_inicio_rec: Optional[str] = None
+    hora_final_rec: Optional[str] = None
     setor_fk: Optional[int] = None
     ocorrencia_fk: Optional[int] = None
     resolucao: Optional[str] = None
@@ -130,6 +182,45 @@ def calc_minutes(t1: Optional[str], t2: Optional[str]) -> Optional[int]:
     except Exception:
         return None
 
+def _eh_vazio(v) -> bool:
+    """True se o valor deve ser considerado 'em branco' (None ou string vazia)."""
+    return v is None or (isinstance(v, str) and v.strip() == "")
+
+def _campos_em_branco(obj) -> List[str]:
+    """Lista (ordenada) dos campos-critério em branco, conforme o Resultado do registro."""
+    completaveis = _completaveis_do_registro(getattr(obj, "sucesso_flag", 0))
+    return [k for k in sorted(completaveis) if _eh_vazio(getattr(obj, k, None))]
+
+def lojas_permitidas(conn, mode, usuario_pk, cargo):
+    """Conjunto de loja_pk que o usuário pode LANÇAR/EDITAR. ADMIN → None (todas). Demais
+    com vínculo → só as vinculadas. Sem vínculo → None (todas, não trava o usuário)."""
+    if (cargo or "").strip().upper() == "ADMIN":
+        return None
+    if not usuario_pk:
+        return None
+    cur = conn.cursor()
+    try:
+        cur.execute(f"SELECT loja_fk FROM usuario_loja WHERE usuario_fk = {sql_ph(mode)}", (int(usuario_pk),))
+        pks = {r[0] for r in cur.fetchall()}
+    finally:
+        cur.close()
+    return pks or None
+
+def _pode_ver_tudo(cargo) -> bool:
+    """ADMIN e SUPERVISOR veem o histórico de todas as lojas; CPD só as suas."""
+    return (cargo or "").strip().upper() in ("ADMIN", "SUPERVISOR")
+
+def _time_str(v) -> Optional[str]:
+    """Normaliza um horário vindo do banco para 'HH:MM' (MySQL TIME vira timedelta)."""
+    if v is None:
+        return None
+    if hasattr(v, "total_seconds"):  # timedelta (MySQL TIME)
+        total = int(v.total_seconds())
+        h, m = divmod(total // 60, 60)
+        return f"{h:02d}:{m:02d}"
+    s = str(v)
+    return s[:5] if len(s) >= 5 else s  # 'HH:MM:SS' -> 'HH:MM'
+
 def verify_token(authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token de autenticação ausente.")
@@ -151,6 +242,14 @@ def get_user_from_token(authorization: Optional[str] = Header(None)):
     except Exception:
         return None
 
+def require_admin(payload=Depends(verify_token)):
+    """Restringe a rota ao administrador (cargo 'ADMIN'). Só o Vitor tem esse cargo,
+    então apenas ele pode ver/alterar os cadastros e criar usuários."""
+    cargo = (payload.get("cargo") or "").strip().upper()
+    if cargo != "ADMIN":
+        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador.")
+    return payload
+
 # ─── Rotas: Auth ─────────────────────────────────────────────────────────────
 @app.get("/", response_class=HTMLResponse)
 def get_form():
@@ -161,7 +260,7 @@ def get_form():
         return HTMLResponse(content=f"<h1>Erro: {e}</h1>", status_code=500)
 
 @app.post("/api/auth/cadastro")
-def cadastrar_usuario(item: CadastroUsuarioInput):
+def cadastrar_usuario(item: CadastroUsuarioInput, _adm=Depends(require_admin)):
     conn, mode = get_conn()
     ph = sql_ph(mode)
     cur = conn.cursor() if mode == "sqlite" else conn.cursor(dictionary=True)
@@ -209,7 +308,7 @@ def me(user=Depends(verify_token)):
 
 # ─── Rotas: Opções ───────────────────────────────────────────────────────────
 @app.get("/api/opcoes")
-def get_options():
+def get_options(payload=Depends(verify_token)):
     conn, mode = get_conn()
     cur = conn.cursor() if mode == "sqlite" else conn.cursor(dictionary=True)
     ph = sql_ph(mode)
@@ -220,6 +319,10 @@ def get_options():
             return [dict(r) for r in rows]
 
         lojas        = fetch("SELECT pk, nome_loja FROM dim_loja ORDER BY nome_loja")
+        # Cada CPD só vê as lojas que pode lançar (ADMIN vê todas).
+        permitidas = lojas_permitidas(conn, mode, payload.get("sub"), payload.get("cargo"))
+        if permitidas is not None:
+            lojas = [l for l in lojas if l["pk"] in permitidas]
         compradores  = fetch("SELECT pk, nome_comprador FROM dim_comprador ORDER BY nome_comprador")
         recebedores  = fetch("SELECT pk, nome_recebedor FROM dim_recebedor ORDER BY nome_recebedor")
         fornecedores = fetch("SELECT pk, razao_social, nome_fantasia, cnpj_cpf FROM dim_fornecedor ORDER BY razao_social")
@@ -241,7 +344,8 @@ def get_options():
 
 # ─── Rotas: Recebimentos ──────────────────────────────────────────────────────
 @app.get("/api/recebimentos")
-def list_recebimentos(busca: Optional[str] = None, status: Optional[str] = None, limite: int = 100):
+def list_recebimentos(busca: Optional[str] = None, status: Optional[str] = None, limite: int = 100,
+                      payload=Depends(verify_token)):
     conn, mode = get_conn()
     ph = sql_ph(mode)
     cur = conn.cursor() if mode == "sqlite" else conn.cursor(dictionary=True)
@@ -249,6 +353,8 @@ def list_recebimentos(busca: Optional[str] = None, status: Optional[str] = None,
         sql = f"""
             SELECT
                 f.fact_id, f.nota, f.obs, f.tipo_entrega, f.tipo_carga, f.sucesso_flag, f.resolucao,
+                f.pendente, f.campos_pendentes,
+                f.loja_fk, f.comprador_fk, f.recebedor_fk, f.setor_fk, f.ocorrencia_fk,
                 d.data_completa,
                 l.nome_loja,
                 forn.razao_social, forn.nome_fantasia,
@@ -267,11 +373,17 @@ def list_recebimentos(busca: Optional[str] = None, status: Optional[str] = None,
             LEFT JOIN dim_recebedor rec ON f.recebedor_fk = rec.pk
             LEFT JOIN dim_usuario_cpd u ON f.usuario_fk = u.pk
             LEFT JOIN dim_setor s      ON f.setor_fk = s.pk
-            JOIN dim_status st         ON f.status_fk = st.pk
+            LEFT JOIN dim_status st     ON f.status_fk = st.pk
             LEFT JOIN dim_ocorrencia o ON f.ocorrencia_fk = o.pk
             WHERE 1=1
         """
         params = []
+        # CPD só vê o histórico das suas lojas; ADMIN e SUPERVISOR veem tudo.
+        if not _pode_ver_tudo(payload.get("cargo")):
+            permitidas = lojas_permitidas(conn, mode, payload.get("sub"), payload.get("cargo"))
+            if permitidas:
+                sql += f" AND f.loja_fk IN ({','.join([ph]*len(permitidas))})"
+                params.extend(sorted(permitidas))
         if status:
             sql += f" AND st.nome_status = {ph}"
             params.append(status)
@@ -301,6 +413,16 @@ def list_recebimentos(busca: Optional[str] = None, status: Optional[str] = None,
                 d["created_at"] = d["created_at"].strftime("%Y-%m-%d %H:%M")
             if d.get("data_completa") and hasattr(d["data_completa"], "strftime"):
                 d["data_completa"] = d["data_completa"].strftime("%Y-%m-%d")
+            # campos_pendentes é guardado como JSON no banco → devolve como lista
+            cp = d.get("campos_pendentes")
+            if cp:
+                try:
+                    d["campos_pendentes"] = json.loads(cp) if isinstance(cp, str) else cp
+                except Exception:
+                    d["campos_pendentes"] = []
+            else:
+                d["campos_pendentes"] = []
+            d["pendente"] = int(d.get("pendente") or 0)
             result.append(d)
         return result
     except Exception as e:
@@ -309,37 +431,176 @@ def list_recebimentos(busca: Optional[str] = None, status: Optional[str] = None,
         cur.close(); conn.close()
 
 @app.post("/api/recebimentos")
-def create_recebimento(item: RecebimentoInput, usuario_pk=Depends(get_user_from_token)):
+def create_recebimento(item: RecebimentoInput, payload=Depends(verify_token)):
+    usuario_pk = payload.get("sub")
     conn, mode = get_conn()
     ph = sql_ph(mode)
     cur = conn.cursor() if mode == "sqlite" else conn.cursor(dictionary=True)
+
+    # O CPD só lança nas lojas que lhe são permitidas (ADMIN → todas).
+    permitidas = lojas_permitidas(conn, mode, usuario_pk, payload.get("cargo"))
+    if permitidas is not None and item.loja_fk not in permitidas:
+        cur.close(); conn.close()
+        raise HTTPException(status_code=403, detail="Loja não permitida para o seu usuário.")
 
     min_liberar    = calc_minutes(item.hora_chegada, item.hora_liberado)
     min_espera     = calc_minutes(item.hora_chegada, item.hora_inicio_rec)
     min_recebimento = calc_minutes(item.hora_inicio_rec, item.hora_final_rec)
 
+    # Status é MANUAL: o usuário escolhe (Recebeu/Não recebeu) — gravamos o que veio.
+    status_fk = item.status_fk
+
+    # Uma NF pode ter VÁRIAS ocorrências → uma linha por ocorrência (mesmo topo, divergência
+    # própria). Sucesso ou lista vazia = uma linha só, com a divergência avulsa do item.
+    ocorrencias = item.ocorrencias if item.ocorrencias else [
+        OcorrenciaItem(setor_fk=item.setor_fk, ocorrencia_fk=item.ocorrencia_fk, resolucao=item.resolucao)
+    ]
+
     try:
         data_fk = get_data_fk(conn, item.data, mode)
-        cur.execute(f"""
-            INSERT INTO fact_recebimento (
-                nota, obs, tipo_entrega, tipo_carga, sucesso_flag, resolucao,
-                data_fk, loja_fk, fornecedor_fk, comprador_fk, recebedor_fk, usuario_fk,
-                setor_fk, status_fk, ocorrencia_fk,
-                hora_chegada, hora_liberado, hora_inicio_rec, hora_final_rec,
-                minutos_para_liberar_nfe, minutos_espera, minutos_recebimento
-            ) VALUES ({','.join([ph]*22)})
-        """, (
-            item.nota, item.obs, item.tipo_entrega, item.tipo_carga,
-            item.sucesso_flag, item.resolucao,
-            data_fk, item.loja_fk, item.fornecedor_fk,
-            item.comprador_fk, item.recebedor_fk,
-            int(usuario_pk) if usuario_pk else None,
-            item.setor_fk, item.status_fk, item.ocorrencia_fk,
-            item.hora_chegada, item.hora_liberado, item.hora_inicio_rec, item.hora_final_rec,
-            min_liberar, min_espera, min_recebimento
-        ))
+        criados, algum_pendente = 0, 0
+        for oc in ocorrencias:
+            # Cada linha calcula sua própria pendência: só os campos-critério em branco
+            # (Sucesso → horas; Ocorrência → a divergência DESTA ocorrência).
+            alvo = SimpleNamespace(
+                sucesso_flag=item.sucesso_flag,
+                hora_liberado=item.hora_liberado, hora_inicio_rec=item.hora_inicio_rec,
+                hora_final_rec=item.hora_final_rec,
+                setor_fk=oc.setor_fk, ocorrencia_fk=oc.ocorrencia_fk, resolucao=oc.resolucao)
+            faltando = _campos_em_branco(alvo) if item.pendente else []
+            pendente = 1 if faltando else 0
+            algum_pendente = algum_pendente or pendente
+            campos_pendentes_json = json.dumps(faltando) if pendente else None
+            cur.execute(f"""
+                INSERT INTO fact_recebimento (
+                    nota, obs, tipo_entrega, tipo_carga, sucesso_flag, resolucao,
+                    data_fk, loja_fk, fornecedor_fk, comprador_fk, recebedor_fk, usuario_fk,
+                    setor_fk, status_fk, ocorrencia_fk,
+                    hora_chegada, hora_liberado, hora_inicio_rec, hora_final_rec,
+                    minutos_para_liberar_nfe, minutos_espera, minutos_recebimento,
+                    pendente, campos_pendentes
+                ) VALUES ({','.join([ph]*24)})
+            """, (
+                item.nota, item.obs, item.tipo_entrega, item.tipo_carga,
+                item.sucesso_flag, oc.resolucao,
+                data_fk, item.loja_fk, item.fornecedor_fk,
+                item.comprador_fk, item.recebedor_fk,
+                int(usuario_pk) if usuario_pk else None,
+                oc.setor_fk, status_fk, oc.ocorrencia_fk,
+                item.hora_chegada, item.hora_liberado, item.hora_inicio_rec, item.hora_final_rec,
+                min_liberar, min_espera, min_recebimento,
+                pendente, campos_pendentes_json
+            ))
+            criados += 1
         conn.commit()
-        return {"ok": True, "message": "Recebimento salvo com sucesso!"}
+        if criados > 1:
+            msg = f"{criados} ocorrências salvas" + (" como pendente!" if algum_pendente else "!")
+        else:
+            msg = "Recebimento salvo como pendente!" if algum_pendente else "Recebimento salvo com sucesso!"
+        return {"ok": True, "pendente": algum_pendente, "criados": criados, "message": msg}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=400, detail=f"Erro de banco: {e}")
+    finally:
+        cur.close(); conn.close()
+
+@app.put("/api/recebimentos/{fact_id}")
+def completar_recebimento(fact_id: int, item: RecebimentoUpdateInput, payload=Depends(verify_token)):
+    """
+    Completa um recebimento PENDENTE preenchendo SOMENTE os campos que ficaram em
+    branco no momento em que foi salvo como pendente. Campos já preenchidos nunca são
+    sobrescritos. Quando não sobra nenhum campo pendente, o registro fica completo.
+    """
+    conn, mode = get_conn()
+    ph = sql_ph(mode)
+    cur = conn.cursor() if mode == "sqlite" else conn.cursor(dictionary=True)
+    try:
+        # 1. Carrega o registro atual
+        cur.execute(f"""
+            SELECT fact_id, pendente, campos_pendentes, sucesso_flag, loja_fk,
+                   comprador_fk, recebedor_fk, tipo_entrega, tipo_carga,
+                   hora_chegada, hora_liberado, hora_inicio_rec, hora_final_rec,
+                   setor_fk, ocorrencia_fk, resolucao, obs
+            FROM fact_recebimento WHERE fact_id = {ph}
+        """, (fact_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Recebimento não encontrado.")
+        if mode == "sqlite":
+            row = dict(row)
+
+        # Só EDITA registros das lojas permitidas ao usuário (ADMIN: todas). O SUPERVISOR
+        # vê tudo, mas só mexe nas suas lojas — nas demais o registro é somente leitura.
+        permitidas_edit = lojas_permitidas(conn, mode, payload.get("sub"), payload.get("cargo"))
+        if permitidas_edit is not None and row.get("loja_fk") not in permitidas_edit:
+            raise HTTPException(status_code=403, detail="Sem permissão para editar registros desta loja.")
+
+        if not int(row.get("pendente") or 0):
+            raise HTTPException(status_code=400, detail="Este recebimento não está pendente.")
+
+        # Campos que o CPD deixou em branco (únicos autorizados a serem preenchidos).
+        # Limitamos ao que faz sentido para o Resultado do registro — assim registros
+        # gravados por versões antigas (que listavam campos inaplicáveis) fecham
+        # corretamente: uma Sucesso não fica presa por setor/ocorrência/resolução e um
+        # "Não recebeu" não fica preso pelas horas pós-chegada.
+        try:
+            pend_list = json.loads(row.get("campos_pendentes") or "[]")
+        except Exception:
+            pend_list = []
+        permitidos = _completaveis_do_registro(row.get("sucesso_flag"))
+        pend_set = (set(pend_list) if pend_list else set(CAMPOS_COMPLETAVEIS)) & permitidos
+
+        # 2. Aplica APENAS os campos pendentes que vieram preenchidos
+        atualizacoes = {}
+        for campo in CAMPOS_COMPLETAVEIS:
+            if campo not in pend_set:
+                continue  # nunca mexe no que já estava preenchido
+            valor = getattr(item, campo, None)
+            if not _eh_vazio(valor):
+                atualizacoes[campo] = valor
+
+        # Só exige preenchimento quando ainda há campo aplicável a completar. Se a regra
+        # do Resultado deixou pend_set vazio (ex.: registro antigo cujos únicos campos em
+        # branco não se aplicam mais), seguimos e o registro é apenas concluído.
+        if not atualizacoes and pend_set:
+            raise HTTPException(status_code=400, detail="Preencha ao menos um campo pendente antes de salvar.")
+
+        # 3. Recalcula métricas de tempo com os horários mesclados (atual + novo)
+        def hora(campo):
+            return atualizacoes[campo] if campo in atualizacoes else _time_str(row.get(campo))
+        ch, lib = hora("hora_chegada"), hora("hora_liberado")
+        ini, fim = hora("hora_inicio_rec"), hora("hora_final_rec")
+        min_liberar     = calc_minutes(ch, lib)
+        min_espera      = calc_minutes(ch, ini)
+        min_recebimento = calc_minutes(ini, fim)
+
+        # 4. Recalcula o que ainda continua pendente
+        restantes = sorted(
+            campo for campo in pend_set
+            if _eh_vazio(atualizacoes.get(campo, row.get(campo)))
+        )
+        novo_pendente = 1 if restantes else 0
+        novo_campos_json = json.dumps(restantes) if novo_pendente else None
+
+        # 5. UPDATE dinâmico: colunas preenchidas + métricas + novo estado
+        sets   = [f"{c} = {ph}" for c in atualizacoes]
+        params = list(atualizacoes.values())
+        sets   += [f"minutos_para_liberar_nfe = {ph}", f"minutos_espera = {ph}", f"minutos_recebimento = {ph}"]
+        params += [min_liberar, min_espera, min_recebimento]
+        sets   += [f"pendente = {ph}", f"campos_pendentes = {ph}", "updated_at = CURRENT_TIMESTAMP"]
+        params += [novo_pendente, novo_campos_json]
+        params.append(fact_id)
+
+        cur.execute(f"UPDATE fact_recebimento SET {', '.join(sets)} WHERE fact_id = {ph}", params)
+        conn.commit()
+        return {
+            "ok": True,
+            "pendente": novo_pendente,
+            "restantes": restantes,
+            "message": "Pendência concluída!" if not novo_pendente else "Campos salvos — ainda há pendências."
+        }
+    except HTTPException:
+        conn.rollback(); raise
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=400, detail=f"Erro de banco: {e}")
@@ -348,7 +609,7 @@ def create_recebimento(item: RecebimentoInput, usuario_pk=Depends(get_user_from_
 
 # ─── Rotas: Admin ─────────────────────────────────────────────────────────────
 @app.post("/api/admin/cadastro")
-def admin_cadastro(item: AdminCadastroInput):
+def admin_cadastro(item: AdminCadastroInput, _adm=Depends(require_admin)):
     conn, mode = get_conn()
     ph = sql_ph(mode)
     cur = conn.cursor() if mode == "sqlite" else conn.cursor(dictionary=True)
@@ -361,7 +622,7 @@ def admin_cadastro(item: AdminCadastroInput):
         if item.tipo not in tabelas:
             raise HTTPException(status_code=400, detail="Tipo inválido")
         tab, col = tabelas[item.tipo]
-        cur.execute(f"INSERT IGNORE INTO {tab} ({col}) VALUES ({ph})", (item.nome,))
+        cur.execute(f"{sql_insert_ignore(mode)} INTO {tab} ({col}) VALUES ({ph})", (item.nome,))
         conn.commit()
         return {"ok": True}
     except HTTPException:
@@ -373,13 +634,13 @@ def admin_cadastro(item: AdminCadastroInput):
         cur.close(); conn.close()
 
 @app.post("/api/admin/fornecedor")
-def admin_fornecedor(item: FornecedorInput):
+def admin_fornecedor(item: FornecedorInput, _adm=Depends(require_admin)):
     conn, mode = get_conn()
     ph = sql_ph(mode)
     cur = conn.cursor() if mode == "sqlite" else conn.cursor(dictionary=True)
     try:
         cur.execute(
-            f"INSERT IGNORE INTO dim_fornecedor (razao_social, nome_fantasia, cnpj_cpf) VALUES ({ph},{ph},{ph})",
+            f"{sql_insert_ignore(mode)} INTO dim_fornecedor (razao_social, nome_fantasia, cnpj_cpf) VALUES ({ph},{ph},{ph})",
             (item.razao_social, item.nome_fantasia, item.cnpj_cpf)
         )
         conn.commit()
@@ -391,13 +652,13 @@ def admin_fornecedor(item: FornecedorInput):
         cur.close(); conn.close()
 
 @app.post("/api/admin/resolucao")
-def admin_resolucao(item: ResolucaoInput):
+def admin_resolucao(item: ResolucaoInput, _adm=Depends(require_admin)):
     conn, mode = get_conn()
     ph = sql_ph(mode)
     cur = conn.cursor() if mode == "sqlite" else conn.cursor(dictionary=True)
     try:
         cur.execute(
-            f"INSERT IGNORE INTO dim_resolucao (setor_fk, ocorrencia_fk, descricao_resolucao) VALUES ({ph},{ph},{ph})",
+            f"{sql_insert_ignore(mode)} INTO dim_resolucao (setor_fk, ocorrencia_fk, descricao_resolucao) VALUES ({ph},{ph},{ph})",
             (item.setor_fk, item.ocorrencia_fk, item.descricao_resolucao)
         )
         conn.commit()

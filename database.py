@@ -1,9 +1,20 @@
 import os
+import sys
 import sqlite3
 from datetime import datetime, date
 
-PROJECT_DIR = r"C:\Users\Usuário\OneDrive\Documentos\minha_pasta\Projetos\cpd_form_project"
-if os.path.exists(PROJECT_DIR):
+# Caminho portável (não fixo em OneDrive): pasta do .exe quando empacotado,
+# senão a pasta deste arquivo. O cpd.db (fallback SQLite) fica ao lado.
+if getattr(sys, "frozen", False):
+    PROJECT_DIR = os.path.dirname(sys.executable)
+else:
+    PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Permite sobrescrever o caminho do banco via variável de ambiente (usado em testes
+# para não encostar no cpd.db real).
+_ENV_DB_PATH = os.environ.get("CPD_DB_PATH")
+if _ENV_DB_PATH:
+    DB_PATH = _ENV_DB_PATH
+elif os.path.exists(PROJECT_DIR):
     DB_PATH = os.path.join(PROJECT_DIR, "cpd.db")
 else:
     DB_PATH = os.path.join(os.path.expanduser("~"), "cpd.db")
@@ -63,6 +74,116 @@ def obter_ou_criar_data_fk(conn, data_str):
     conn.commit()
     return pk
 
+# Vínculo Usuário (CPD) → Loja(s) que pode LANÇAR e EDITAR. ADMIN (Vitor) faz tudo.
+# Nomes batem com dim_usuario_cpd.nome e dim_loja.nome_loja.
+USUARIO_LOJAS = {
+    "Genesis":   ["MATRIZ"],
+    "Katia":     ["MATRIZ"],
+    "Ytalo":     ["MERCADÃO", "MERCADINHO"],
+    "Hortencia": ["FRANCISCANOS"],
+}
+# Supervisores: VEEM o histórico de TODAS as lojas (só leitura), mas continuam
+# lançando/editando apenas nas suas lojas (USUARIO_LOJAS). Não são admin.
+SUPERVISORES = {"Genesis"}
+
+# DDL canônico da fact (usado no CREATE e na reconstrução da migração de tipo_entrega).
+# tipo_entrega é TEXT livre (aceita 'CIF'/'TRANSFERENCIA') — sem CHECK Mix/Volume.
+FACT_RECEBIMENTO_DDL = """
+CREATE TABLE IF NOT EXISTS fact_recebimento (
+    fact_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nota TEXT NOT NULL,
+    obs TEXT,
+    tipo_entrega TEXT,
+    tipo_carga TEXT,
+    sucesso_flag INTEGER NOT NULL DEFAULT 0 CHECK(sucesso_flag IN (0, 1, 2, 9)),
+    resolucao TEXT,
+
+    pendente INTEGER NOT NULL DEFAULT 0 CHECK(pendente IN (0, 1)),
+    campos_pendentes TEXT,
+
+    data_fk INTEGER NOT NULL,
+    loja_fk INTEGER NOT NULL,
+    fornecedor_fk INTEGER NOT NULL,
+    comprador_fk INTEGER,
+    recebedor_fk INTEGER,
+    usuario_fk INTEGER,
+    setor_fk INTEGER,
+    status_fk INTEGER,
+    ocorrencia_fk INTEGER,
+
+    hora_chegada TEXT,
+    hora_liberado TEXT,
+    hora_inicio_rec TEXT,
+    hora_final_rec TEXT,
+
+    minutos_para_liberar_nfe INTEGER CHECK(minutos_para_liberar_nfe >= 0 OR minutos_para_liberar_nfe IS NULL),
+    minutos_espera INTEGER CHECK(minutos_espera >= 0 OR minutos_espera IS NULL),
+    minutos_recebimento INTEGER CHECK(minutos_recebimento >= 0 OR minutos_recebimento IS NULL),
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY(data_fk)       REFERENCES dim_data(pk),
+    FOREIGN KEY(loja_fk)       REFERENCES dim_loja(pk),
+    FOREIGN KEY(fornecedor_fk) REFERENCES dim_fornecedor(pk),
+    FOREIGN KEY(comprador_fk)  REFERENCES dim_comprador(pk),
+    FOREIGN KEY(recebedor_fk)  REFERENCES dim_recebedor(pk),
+    FOREIGN KEY(usuario_fk)    REFERENCES dim_usuario_cpd(pk),
+    FOREIGN KEY(setor_fk)      REFERENCES dim_setor(pk),
+    FOREIGN KEY(status_fk)     REFERENCES dim_status(pk),
+    FOREIGN KEY(ocorrencia_fk) REFERENCES dim_ocorrencia(pk)
+);
+"""
+
+
+def _migrar_tipo_entrega(conn):
+    """
+    Migração idempotente: remove o CHECK antigo de tipo_entrega ('Mix'/'Volume'),
+    que rejeitava 'CIF'/'TRANSFERENCIA'. Reconstrói a tabela preservando os dados.
+    """
+    cur = conn.cursor()
+    row = cur.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='fact_recebimento'"
+    ).fetchone()
+    if not row or not row[0]:
+        return  # tabela ainda não existe (banco novo)
+    if "'Mix'" not in row[0] and "'Volume'" not in row[0]:
+        return  # já está no formato novo (sem CHECK Mix/Volume)
+
+    cols_antigas = [c[1] for c in cur.execute("PRAGMA table_info(fact_recebimento)").fetchall()]
+    conn.execute("PRAGMA foreign_keys = OFF;")
+    cur.execute("BEGIN;")
+    try:
+        cur.execute("ALTER TABLE fact_recebimento RENAME TO _fact_receb_old;")
+        cur.execute(FACT_RECEBIMENTO_DDL)
+        cols_novas = [c[1] for c in cur.execute("PRAGMA table_info(fact_recebimento)").fetchall()]
+        comuns = ", ".join(c for c in cols_antigas if c in cols_novas)
+        cur.execute(f"INSERT INTO fact_recebimento ({comuns}) SELECT {comuns} FROM _fact_receb_old;")
+        cur.execute("DROP TABLE _fact_receb_old;")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.execute("PRAGMA foreign_keys = ON;")
+
+
+def _migrar_colunas_pendente(conn):
+    """
+    Migração idempotente: garante que as colunas de pendência existam em bancos
+    que já foram criados antes desta funcionalidade. Seguro rodar sempre.
+    """
+    cur = conn.cursor()
+    cur.execute("PRAGMA table_info(fact_recebimento)")
+    existentes = {linha[1] for linha in cur.fetchall()}
+    if not existentes:
+        return  # tabela ainda não existe (banco novo) — o CREATE cuidará das colunas
+    if "pendente" not in existentes:
+        cur.execute("ALTER TABLE fact_recebimento ADD COLUMN pendente INTEGER NOT NULL DEFAULT 0")
+    if "campos_pendentes" not in existentes:
+        cur.execute("ALTER TABLE fact_recebimento ADD COLUMN campos_pendentes TEXT")
+    conn.commit()
+
 def init_db():
     """Inicializa as tabelas do banco de dados SQLite e insere os dados iniciais (seed)"""
     print(f"Inicializando banco de dados em: {DB_PATH}")
@@ -72,18 +193,15 @@ def init_db():
     
     conn = get_connection()
     cursor = conn.cursor()
-    
-    # Drops preventivos para garantir a exclusão de dados antigos incoerentes
-    cursor.execute("DROP TABLE IF EXISTS fact_recebimento;")
-    cursor.execute("DROP TABLE IF EXISTS dim_resolucao;")
-    cursor.execute("DROP TABLE IF EXISTS dim_status;")
-    cursor.execute("DROP TABLE IF EXISTS dim_ocorrencia;")
-    cursor.execute("DROP TABLE IF EXISTS dim_setor;")
-    cursor.execute("DROP TABLE IF EXISTS dim_recebedor;")
-    cursor.execute("DROP TABLE IF EXISTS dim_comprador;")
-    cursor.execute("DROP TABLE IF EXISTS dim_loja;")
-    
-    # Ativa transações
+
+    # Migrações idempotentes (antes de criar índices/consultas que dependem delas):
+    _migrar_colunas_pendente(conn)   # colunas de pendência em bancos antigos
+    _migrar_tipo_entrega(conn)       # troca o CHECK antigo de tipo_entrega por TEXT livre
+
+    # PERSISTÊNCIA: as tabelas NÃO são mais apagadas a cada inicialização.
+    # Tudo é criado com CREATE TABLE IF NOT EXISTS e semeado com INSERT OR IGNORE
+    # (idempotente), então os dados já existentes (inclusive recebimentos pendentes
+    # aguardando complemento) são preservados entre aberturas do app.
     cursor.execute("BEGIN TRANSACTION;")
     
     try:
@@ -123,7 +241,18 @@ def init_db():
                 nome_loja TEXT UNIQUE NOT NULL
             );
         """)
-        
+
+        # 2b. usuario_loja — quais lojas cada CPD pode lançar (ADMIN vê todas).
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS usuario_loja (
+                usuario_fk INTEGER NOT NULL,
+                loja_fk    INTEGER NOT NULL,
+                PRIMARY KEY (usuario_fk, loja_fk),
+                FOREIGN KEY (usuario_fk) REFERENCES dim_usuario_cpd(pk),
+                FOREIGN KEY (loja_fk)    REFERENCES dim_loja(pk)
+            );
+        """)
+
         # 3. dim_fornecedor
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS dim_fornecedor (
@@ -186,54 +315,8 @@ def init_db():
             );
         """)
         
-        # 9. fact_recebimento
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS fact_recebimento (
-                fact_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nota TEXT NOT NULL,
-                obs TEXT,
-                tipo_entrega TEXT CHECK(tipo_entrega IN ('Mix', 'Volume') OR tipo_entrega IS NULL),
-                tipo_carga TEXT,
-                sucesso_flag INTEGER NOT NULL DEFAULT 0 CHECK(sucesso_flag IN (0, 1, 2, 9)),
-                resolucao TEXT,
-
-                -- Chaves estrangeiras
-                data_fk INTEGER NOT NULL,
-                loja_fk INTEGER NOT NULL,
-                fornecedor_fk INTEGER NOT NULL,
-                comprador_fk INTEGER,
-                recebedor_fk INTEGER,
-                usuario_fk INTEGER,
-                setor_fk INTEGER,
-                status_fk INTEGER,
-                ocorrencia_fk INTEGER,
-
-                -- Horários
-                hora_chegada TEXT,
-                hora_liberado TEXT,
-                hora_inicio_rec TEXT,
-                hora_final_rec TEXT,
-
-                -- Métricas calculadas
-                minutos_para_liberar_nfe INTEGER CHECK(minutos_para_liberar_nfe >= 0 OR minutos_para_liberar_nfe IS NULL),
-                minutos_espera INTEGER CHECK(minutos_espera >= 0 OR minutos_espera IS NULL),
-                minutos_recebimento INTEGER CHECK(minutos_recebimento >= 0 OR minutos_recebimento IS NULL),
-
-                -- Auditoria
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-                FOREIGN KEY(data_fk)       REFERENCES dim_data(pk),
-                FOREIGN KEY(loja_fk)       REFERENCES dim_loja(pk),
-                FOREIGN KEY(fornecedor_fk) REFERENCES dim_fornecedor(pk),
-                FOREIGN KEY(comprador_fk)  REFERENCES dim_comprador(pk),
-                FOREIGN KEY(recebedor_fk)  REFERENCES dim_recebedor(pk),
-                FOREIGN KEY(usuario_fk)    REFERENCES dim_usuario_cpd(pk),
-                FOREIGN KEY(setor_fk)      REFERENCES dim_setor(pk),
-                FOREIGN KEY(status_fk)     REFERENCES dim_status(pk),
-                FOREIGN KEY(ocorrencia_fk) REFERENCES dim_ocorrencia(pk)
-            );
-        """)
+        # 9. fact_recebimento (DDL canônico compartilhado com a migração)
+        cursor.execute(FACT_RECEBIMENTO_DDL)
         
         # Índices de performance
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_fact_data ON fact_recebimento(data_fk);")
@@ -244,28 +327,33 @@ def init_db():
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_fact_status ON fact_recebimento(status_fk);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_fact_ocorrencia ON fact_recebimento(ocorrencia_fk);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_fact_nota ON fact_recebimento(nota);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_fact_pendente ON fact_recebimento(pendente);")
         
         # -------------------------------------------------------------
         # INSERÇÃO DE DADOS SEMENTE (SEED)
         # -------------------------------------------------------------
         
+        # Listas gerenciadas pelo admin (lojas/compradores/recebedores): semeadas só
+        # na primeira vez (tabela vazia), para que exclusões feitas depois não voltem.
+        def _vazia(tabela):
+            cursor.execute(f"SELECT COUNT(*) FROM {tabela}")
+            return cursor.fetchone()[0] == 0
+
         # Lojas
-        lojas = ["LOJA SUL", "LOJA CENTRAL", "LOJA OESTE", "LOJA SHOPPING"]
-        for loja in lojas:
-            cursor.execute("INSERT OR IGNORE INTO dim_loja (nome_loja) VALUES (?)", (loja,))
+        if _vazia("dim_loja"):
+            for loja in ["FRANCISCANOS", "MATRIZ", "MERCADINHO", "MERCADÃO"]:
+                cursor.execute("INSERT OR IGNORE INTO dim_loja (nome_loja) VALUES (?)", (loja,))
 
         # Compradores (setor comercial)
-        compradores = ["Bruno", "Carla", "Andresa", "Elaine", "Diego", "Fabio"]
-        for c in compradores:
-            cursor.execute("INSERT OR IGNORE INTO dim_comprador (nome_comprador) VALUES (?)", (c,))
+        if _vazia("dim_comprador"):
+            for c in ["Allan", "Ana", "Andresa", "Edna", "Jhonne", "Mario"]:
+                cursor.execute("INSERT OR IGNORE INTO dim_comprador (nome_comprador) VALUES (?)", (c,))
 
-        # Recebedores (nomes fictícios de demonstração)
-        recebedores = [
-            "Alexandre", "Gustavo", "Rafael", "Tiago",
-            "Vinicius", "Leonardo", "Marcelo", "Rodrigo"
-        ]
-        for r in recebedores:
-            cursor.execute("INSERT OR IGNORE INTO dim_recebedor (nome_recebedor) VALUES (?)", (r,))
+        # Recebedores
+        if _vazia("dim_recebedor"):
+            for r in ["Thalis", "Edson", "Israel", "Sergio",
+                      "Thiago", "Rildo", "Robson", "Pedro"]:
+                cursor.execute("INSERT OR IGNORE INTO dim_recebedor (nome_recebedor) VALUES (?)", (r,))
             
         # Setores (Somente os usados no mapeamento do script)
         setores = ["Comercial", "Fornecedor", "CPD"]
@@ -277,15 +365,15 @@ def init_db():
         for st in statuses:
             cursor.execute("INSERT OR IGNORE INTO dim_status (nome_status) VALUES (?)", (st,))
 
-        # Usuário admin de DEMONSTRAÇÃO (troque a senha em produção; use o .env/hash próprio)
+        # Seed default admin user
         from passlib.hash import sha256_crypt
-        cursor.execute("SELECT COUNT(*) FROM dim_usuario_cpd WHERE email = ?", ("admin@exemplo.com",))
+        cursor.execute("SELECT COUNT(*) FROM dim_usuario_cpd WHERE email = ?", ("vitor@opcao.com.br",))
         if cursor.fetchone()[0] == 0:
-            admin_hash = sha256_crypt.hash("admin123")
+            admin_hash = sha256_crypt.hash("metrika123")
             cursor.execute("""
                 INSERT INTO dim_usuario_cpd (nome, email, senha_hash, cargo, ativo)
                 VALUES (?, ?, ?, ?, 1)
-            """, ("Administrador", "admin@exemplo.com", admin_hash, "ADMIN"))
+            """, ("Vitor", "vitor@opcao.com.br", admin_hash, "ADMIN"))
             
         # Ocorrências (Somente as 14 usadas no mapeamento do script)
         ocorrencias = [
@@ -298,13 +386,13 @@ def init_db():
         for oc in ocorrencias:
             cursor.execute("INSERT OR IGNORE INTO dim_ocorrencia (descricao_ocorrencia) VALUES (?)", (oc,))
             
-        # Fornecedores fictícios de demonstração (CNPJs de exemplo)
+        # Fornecedores padrão
         fornecedores = [
-            ("DISTRIBUIDORA ALFA LTDA", "Alfa", "11.111.111/0001-11"),
-            ("FORNECEDOR BETA S.A.", "Beta", "22.222.222/0001-22"),
-            ("COMERCIAL GAMA LTDA", "Gama", "33.333.333/0001-33"),
-            ("INDUSTRIA DELTA S.A.", "Delta", "44.444.444/0001-44"),
-            ("ATACADO EPSILON LTDA", "Epsilon", "55.555.555/0001-55"),
+            ("M. DIAS BRANCO S.A.", "M. Dias Branco", "07.206.816/0001-15"),
+            ("AMBEV S.A.", "Ambev", "07.526.557/0001-85"),
+            ("NESTLE BRASIL LTDA.", "Nestlé", "60.398.369/0001-04"),
+            ("UNILEVER BRASIL LTDA.", "Unilever", "56.996.160/0001-12"),
+            ("COCA COLA INDUSTRIAS LTDA.", "Coca-Cola", "45.997.418/0001-53"),
             ("OUTROS / DIVERSOS", "Outros Fornecedores", "00.000.000/0000-00")
         ]
         for razao, fantasia, cnpj in fornecedores:
@@ -458,9 +546,28 @@ def init_db():
                     VALUES (?, ?, ?)
                 """, (s_id, o_id, res_desc))
                 
+        # Marca supervisores (veem todo o histórico, só leitura). Não mexe no ADMIN.
+        for sup in SUPERVISORES:
+            cursor.execute("UPDATE dim_usuario_cpd SET cargo='SUPERVISOR' WHERE nome=? AND cargo<>'ADMIN'", (sup,))
+
+        # Vínculo Usuário (CPD) → Loja(s) que pode lançar. ADMIN vê todas.
+        # Idempotente (INSERT OR IGNORE por par, resolvendo por nome). Só cria o par se o
+        # usuário e a loja existirem; usuário sem vínculo continua vendo todas as lojas.
+        for uname, lojas in USUARIO_LOJAS.items():
+            cursor.execute("SELECT pk FROM dim_usuario_cpd WHERE nome = ?", (uname,))
+            u = cursor.fetchone()
+            if not u:
+                continue
+            for lname in lojas:
+                cursor.execute("SELECT pk FROM dim_loja WHERE nome_loja = ?", (lname,))
+                l = cursor.fetchone()
+                if l:
+                    cursor.execute("INSERT OR IGNORE INTO usuario_loja (usuario_fk, loja_fk) VALUES (?, ?)",
+                                   (u["pk"], l["pk"]))
+
         # Insere a data de hoje na dim_data para iniciar
         obter_ou_criar_data_fk(conn, date.today().strftime("%Y-%m-%d"))
-        
+
         conn.commit()
         print("Banco de dados CPD inicializado com sucesso!")
         

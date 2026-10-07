@@ -6,48 +6,47 @@
   <title>CPD - Controle de Recebimentos</title>
   <meta name="description" content="Sistema interno de controle de recebimentos e ocorrências do CPD.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ── TOKENS ──────────────────────────────────────────────────────────── */
+    /* ── TOKENS (tema corporativo claro, sem neon) ───────────────────────── */
     :root{
-      /* CMBLU Design System Tokens */
-      --black: #050609;
-      --white: #fff9fb;
-      --white70: rgba(255, 249, 251, 0.7);
-      --white50: rgba(255, 249, 251, 0.5);
-      --white20: rgba(255, 249, 251, 0.2);
-      --white10: rgba(255, 249, 251, 0.1);
-      --blue: #2f6ae0;
-      --red: #f75e33;
+      --black:#1f2733;
+      --white:#ffffff;
+      --white70:rgba(31,39,51,.62);
+      --white50:rgba(31,39,51,.46);
+      --white20:#e6eaf1;
+      --white10:#eef2f7;
+      --blue:#d3141a;
+      --red:#c0392b;
+      --applogo:url("data:image/png;base64,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");
 
-      /* CPD UI Variables adapted to CMBLU Colors */
-      --void: var(--black);
-      --deep: #0c0e1a;
-      --surf: var(--white10);
-      --card: rgba(255, 249, 251, 0.06);
-      --hover: var(--white20);
-      --inp: rgba(5, 6, 9, 0.6);
+      --void:#eef1f6;
+      --deep:#e6eaf1;
+      --surf:#ffffff;
+      --card:#f7f9fc;
+      --hover:#eef3f9;
+      --inp:#ffffff;
 
-      --b: rgba(255, 249, 251, 0.08);
-      --bb: rgba(47, 106, 224, 0.25);
-      --ba: rgba(47, 106, 224, 0.55);
+      --b:#e5e9f0;
+      --bb:#dce3ec;
+      --ba:#b7c3d6;
 
-      --a: var(--blue);
-      --a2: var(--red);
-      --grad: linear-gradient(135deg, var(--blue) 0%, var(--red) 100%);
-      --glow: rgba(47, 106, 224, 0.2);
+      --a:#d3141a;
+      --a2:#5a6577;
+      --grad:#d3141a;
+      --glow:rgba(211,20,26,.14);
 
-      --em: #10d494;
-      --am: #f5a623;
-      --rose: #ff0055;
+      --em:#1f9254;
+      --am:#b3781a;
+      --rose:#c0392b;
 
-      --t1: var(--white);
-      --t2: #bcc4d6;
-      --t3: #64708a;
+      --t1:#1f2733;
+      --t2:#556074;
+      --t3:#8a94a6;
 
-      --r-xl: 18px; --r-lg: 12px; --r-md: 8px; --r-sm: 5px;
+      --r-xl:14px; --r-lg:11px; --r-md:8px; --r-sm:6px;
       --ease: cubic-bezier(.16, 1, .3, 1);
-      --tr: all .26s var(--ease);
+      --tr: all .18s var(--ease);
     }
 
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -61,45 +60,14 @@
       overflow-x:hidden;
     }
 
-    /* ── SUNRISE-SUNSET BACKGROUND (CMBLU) ──────────────────────────────── */
-    .sunrise-sunset {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: -1;
-      background-color: #050609;
-      overflow: hidden;
-      pointer-events: none;
-    }
-    .blue-to-white-gradient {
-      position: absolute;
-      inset: 0;
-      background-image: linear-gradient(180deg, #05060900 0%, #05060933 50%, #2f6ae0cc 80%, #fff9fbcc 100%);
-      opacity: 1;
-      animation: pulseBlue 16s ease-in-out infinite;
-      will-change: opacity;
-    }
-    .red-to-white-gradient {
-      position: absolute;
-      inset: 0;
-      background-image: linear-gradient(180deg, #05060900 0%, #05060933 50%, #f75e33cc 80%, #fff9fbcc 100%);
-      opacity: 0;
-      animation: pulseRed 16s ease-in-out infinite;
-      will-change: opacity;
-    }
-    @keyframes pulseBlue {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.15; }
-    }
-    @keyframes pulseRed {
-      0%, 100% { opacity: 0; }
-      50% { opacity: 0.85; }
-    }
+    /* ── FUNDO (estático, sem animação) ─────────────────────────────────── */
+    .sunrise-sunset{position:fixed;inset:0;z-index:-1;background:var(--void);pointer-events:none}
+    .blue-to-white-gradient,.red-to-white-gradient{display:none}
 
-    ::-webkit-scrollbar{width:5px}
+    ::-webkit-scrollbar{width:9px;height:9px}
     ::-webkit-scrollbar-track{background:transparent}
-    ::-webkit-scrollbar-thumb{background:#1a2a45;border-radius:3px}
+    ::-webkit-scrollbar-thumb{background:#c7cfdd;border-radius:5px}
+    ::-webkit-scrollbar-thumb:hover{background:#aab5c7}
 
     /* ── LOGIN SCREEN ─────────────────────────────────────────────────────── */
     #login-screen{
@@ -112,48 +80,36 @@
     #login-screen.hidden{opacity:0;visibility:hidden;pointer-events:none}
 
     .login-box{
-      width:420px;
-      background:rgba(8,18,38,.85);
-      border:1px solid var(--bb);
-      border-radius:24px;
-      padding:48px 40px 40px;
-      backdrop-filter:blur(32px);
-      box-shadow:0 30px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(79,147,255,.05);
+      width:412px;max-width:calc(100vw - 32px);
+      background:var(--surf);
+      border:1px solid var(--b);
+      border-radius:16px;
+      padding:44px 38px 38px;
+      box-shadow:0 1px 2px rgba(16,24,40,.04), 0 12px 32px rgba(16,24,40,.10);
       position:relative;z-index:1;
-      transform: translateY(0);
-      animation: loginIntro 0.6s var(--ease) forwards;
+      animation: loginIntro 0.4s var(--ease) forwards;
     }
     @keyframes loginIntro {
-      from { opacity: 0; transform: translateY(30px); }
+      from { opacity: 0; transform: translateY(14px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
     .login-logo{
-      width:56px;height:56px;
-      background:var(--grad);
-      border-radius:16px;
-      display:flex;align-items:center;justify-content:center;
-      font-size:26px;
-      box-shadow:0 0 28px rgba(79,147,255,.35);
-      margin:0 auto 24px;
-      animation: pulseGlow 3s infinite ease-in-out;
-    }
-    @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 0 28px rgba(79,147,255,.35); }
-      50% { box-shadow: 0 0 45px rgba(79,147,255,.6); }
+      width:58px;height:58px;
+      background:var(--applogo) center/cover no-repeat;
+      border-radius:15px;
+      margin:0 auto 22px;
+      box-shadow:0 6px 18px rgba(0,0,0,.22);
     }
 
     .login-title{
-      font-family:'Outfit',sans-serif;
-      font-size:28px;font-weight:800;
-      text-align:center;
-      background:var(--grad);
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+      font-size:25px;font-weight:800;
+      text-align:center;color:var(--t1);
       margin-bottom:6px;
-      letter-spacing:-0.5px;
+      letter-spacing:-0.4px;
     }
     .login-sub{
-      font-size:13px;color:var(--t3);text-align:center;margin-bottom:32px;
+      font-size:13px;color:var(--t3);text-align:center;margin-bottom:30px;
     }
 
     .form-field{margin-bottom:18px}
@@ -171,34 +127,25 @@
     }
     .form-field input:focus{
       border-color:var(--a);
-      box-shadow:0 0 0 4px rgba(79,147,255,.18);
-      transform: translateY(-1px);
+      box-shadow:0 0 0 3px rgba(211,20,26,.16);
     }
     .form-field input::placeholder{color:var(--t3)}
 
     .btn-login{
-      width:100%;padding:15px;
-      background:var(--grad);color:#fff;
+      width:100%;padding:14px;
+      background:var(--a);color:#fff;
       border:none;border-radius:var(--r-md);
       font-size:15px;font-weight:700;font-family:inherit;
       cursor:pointer;transition:var(--tr);
-      box-shadow:0 6px 22px rgba(79,147,255,.3);
       margin-top:8px;
-      position:relative;overflow:hidden;
     }
-    .btn-login::before{
-      content:'';position:absolute;inset:0;
-      background:linear-gradient(rgba(255,255,255,.1),transparent);
-      opacity:0;transition:opacity .2s;
-    }
-    .btn-login:hover::before{opacity:1}
-    .btn-login:hover{transform:translateY(-2px) scale(1.01);box-shadow:0 10px 30px rgba(79,147,255,.38)}
-    .btn-login:active{transform:translateY(0) scale(0.99)}
+    .btn-login:hover{background:#b31217}
+    .btn-login:active{background:#910e14}
 
     .login-err{
-      background:rgba(244,63,110,.1);border:1px solid rgba(244,63,110,.25);
+      background:#fdeded;border:1px solid #f3c9c9;
       border-radius:var(--r-md);padding:11px 14px;
-      font-size:13px;color:#ff6b91;text-align:center;
+      font-size:13px;color:#b3392f;text-align:center;
       margin-top:14px;display:none;
     }
     .login-err.show{display:block}
@@ -209,25 +156,22 @@
     /* ── HEADER ──────────────────────────────────────────────────────────── */
     header{
       position:sticky;top:0;z-index:200;
-      height:68px;
+      height:64px;
       display:flex;align-items:center;justify-content:space-between;
-      padding:0 36px;
-      background:rgba(2,5,12,.8);
-      backdrop-filter:blur(24px) saturate(180%);
+      padding:0 28px;
+      background:var(--surf);
       border-bottom:1px solid var(--b);
     }
     .brand{display:flex;align-items:center;gap:12px;text-decoration:none}
     .brand-icon{
-      width:38px;height:38px;
-      background:var(--grad);border-radius:10px;
-      display:flex;align-items:center;justify-content:center;
-      font-size:18px;
-      box-shadow:0 0 16px rgba(79,147,255,.25);
+      width:40px;height:40px;
+      background:var(--applogo) center/cover no-repeat;
+      border-radius:10px;
+      box-shadow:0 2px 8px rgba(0,0,0,.18);
     }
     .brand-name{
-      font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;
-      background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
-      letter-spacing:-0.4px;
+      font-size:17px;font-weight:800;color:var(--t1);
+      letter-spacing:-0.3px;
     }
     .brand-tag{font-size:10px;color:var(--t3);font-weight:600;letter-spacing:1px;text-transform:uppercase}
 
@@ -236,64 +180,57 @@
     /* User chip */
     .user-chip{
       display:flex;align-items:center;gap:9px;
-      background:rgba(79,147,255,.08);
-      border:1px solid rgba(79,147,255,.15);
-      border-radius:50px;padding:6px 14px 6px 8px;
+      background:var(--card);
+      border:1px solid var(--b);
+      border-radius:50px;padding:5px 14px 5px 6px;
       transition:var(--tr);
-    }
-    .user-chip:hover {
-      background:rgba(79,147,255,0.14);
-      transform: scale(1.02);
     }
     .user-avatar{
       width:28px;height:28px;border-radius:50%;
-      background:var(--grad);
+      background:var(--a);
       display:flex;align-items:center;justify-content:center;
       font-size:12px;font-weight:700;color:#fff;
-      animation: pulseGlow 4s infinite ease-in-out;
     }
     .user-name{font-size:13px;font-weight:600;color:var(--t1)}
-    .user-cargo{font-size:10px;color:var(--t3);font-weight:500}
+    .user-cargo{font-size:10px;color:var(--t3);font-weight:500;text-transform:uppercase;letter-spacing:.4px}
 
     nav{
-      display:flex;background:rgba(8,18,38,.8);
+      display:flex;background:var(--card);
       border:1px solid var(--b);padding:4px;border-radius:50px;gap:2px;
     }
     .tab-btn{
-      background:none;border:none;color:var(--t3);
-      padding:8px 20px;border-radius:50px;
+      background:none;border:none;color:var(--t2);
+      padding:8px 18px;border-radius:50px;
       font-size:13px;font-weight:600;font-family:inherit;
       cursor:pointer;transition:var(--tr);
       display:flex;align-items:center;white-space:nowrap;
     }
-    .tab-btn:hover{color:var(--t2);transform: translateY(-0.5px);}
-    .tab-btn.active{color:#fff;background:var(--grad);box-shadow:0 2px 10px rgba(79,147,255,.28)}
+    .tab-btn:hover{color:var(--t1);background:var(--hover)}
+    .tab-btn.active{color:#fff;background:var(--a)}
+    .tab-btn.active:hover{background:#b31217}
 
     .btn-sair{
-      background:none;border:1px solid rgba(244,63,110,.25);
-      color:#ff6b91;padding:7px 14px;border-radius:50px;
+      background:var(--surf);border:1px solid var(--b);
+      color:var(--t2);padding:7px 14px;border-radius:50px;
       font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;
       transition:var(--tr);
     }
-    .btn-sair:hover{background:rgba(244,63,110,.1);transform: scale(1.03);}
+    .btn-sair:hover{background:#fdeded;border-color:#f0c9c9;color:#b3392f}
 
     /* ── MAIN LAYOUT ─────────────────────────────────────────────────────── */
-    main{flex:1;max-width:1380px;width:100%;margin:0 auto;padding:28px 36px}
+    main{flex:1;max-width:1380px;width:100%;margin:0 auto;padding:28px 28px}
     .view-section{
       display:none;
       opacity:0;
-      transform:translateY(8px) scale(0.995);
-      transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+      transform:translateY(6px);
+      transition: opacity 0.24s var(--ease), transform 0.24s var(--ease);
     }
     .view-section.active{
       display:block;
-      animation: tabSwitch 0.4s var(--ease) forwards;
+      animation: tabSwitch 0.28s var(--ease) forwards;
     }
     @keyframes tabSwitch {
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     /* ── CARDS ───────────────────────────────────────────────────────────── */
@@ -301,25 +238,23 @@
       background:var(--surf);
       border:1px solid var(--b);
       border-radius:var(--r-xl);
-      padding:28px;
-      backdrop-filter:blur(20px);
-      box-shadow:0 4px 24px rgba(0,0,0,.35);
-      margin-bottom:24px;
-      transition: transform 0.3s var(--ease), border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+      padding:26px;
+      box-shadow:0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+      margin-bottom:22px;
+      transition: box-shadow 0.2s var(--ease), border-color 0.2s var(--ease);
     }
     .card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(79,147,255,0.18);
-      box-shadow: 0 12px 36px rgba(0,0,0,0.48), 0 0 15px rgba(79,147,255,0.04);
+      border-color: var(--ba);
+      box-shadow: 0 2px 4px rgba(16,24,40,.05), 0 6px 16px rgba(16,24,40,.08);
     }
     .card-title{
-      font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;
-      margin-bottom:20px;display:flex;align-items:center;gap:9px;color:#fff;
-      letter-spacing:-0.3px;
+      font-size:17px;font-weight:800;
+      margin-bottom:20px;display:flex;align-items:center;gap:9px;color:var(--t1);
+      letter-spacing:-0.2px;
     }
     .card-title-badge{
       font-size:10px;font-weight:700;padding:3px 9px;border-radius:50px;
-      background:rgba(79,147,255,.15);color:var(--a);letter-spacing:.5px;text-transform:uppercase;
+      background:#fcebeb;color:var(--a);letter-spacing:.5px;text-transform:uppercase;
     }
 
     /* ── GRID ────────────────────────────────────────────────────────────── */
@@ -336,29 +271,28 @@
     input,select,textarea{
       width:100%;background:var(--inp);
       border:1px solid var(--bb);border-radius:var(--r-md);
-      padding:12px 15px;font-size:13.5px;color:var(--t1);
+      padding:11px 14px;font-size:13.5px;color:var(--t1);
       font-family:inherit;transition:var(--tr);outline:none;
     }
+    input:hover,select:hover,textarea:hover{border-color:var(--ba)}
     input:focus,select:focus,textarea:focus{
-      border-color:var(--a);box-shadow:0 0 0 4px rgba(79,147,255,0.18);
-      background:rgba(8,18,38,.95);
-      transform: translateY(-1px);
+      border-color:var(--a);box-shadow:0 0 0 3px rgba(211,20,26,.16);
     }
-    select option{background:#0a1628}
+    select option{background:#ffffff;color:var(--t1)}
     input::placeholder,textarea::placeholder{color:var(--t3)}
 
     /* Autocomplete */
     .autocomplete-wrapper{position:relative}
     .ac-list{
       position:absolute;top:calc(100% + 4px);left:0;right:0;
-      background:#0b1a30;border:1px solid var(--bb);
+      background:var(--surf);border:1px solid var(--bb);
       border-radius:var(--r-md);max-height:210px;overflow-y:auto;
-      z-index:50;box-shadow:0 16px 40px rgba(0,0,0,.55);display:none;
-      animation: acOpen 0.25s var(--ease) forwards;
+      z-index:50;box-shadow:0 12px 28px rgba(16,24,40,.14);display:none;
+      animation: acOpen 0.16s var(--ease) forwards;
     }
     @keyframes acOpen {
-      from { opacity: 0; transform: translateY(-5px) scale(0.99); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .ac-item{
       padding:10px 15px;cursor:pointer;font-size:13px;
@@ -366,7 +300,7 @@
       border-bottom:1px solid var(--b);
     }
     .ac-item:last-child{border-bottom:none}
-    .ac-item:hover{background:rgba(79,147,255,.12);color:var(--t1);transform: translateX(4px);}
+    .ac-item:hover{background:#fcebeb;color:var(--t1)}
     .ac-item-main{font-weight:600;color:var(--t1)}
     .ac-item-sub{font-size:11px;color:var(--t3);margin-top:2px}
 
@@ -380,10 +314,10 @@
       cursor:pointer;transition:var(--tr);font-size:13px;font-weight:600;
       color:var(--t2);background:var(--inp);
     }
-    .cargo-pill:hover{border-color:var(--a);color:var(--a);transform: translateY(-1px);}
-    .cargo-pill.selected-volume{background:rgba(16,212,148,.1);border-color:var(--em);color:var(--em);box-shadow: 0 0 8px rgba(16,212,148,0.25);}
-    .cargo-pill.selected-mix{background:rgba(155,89,245,.12);border-color:var(--a2);color:var(--a2);box-shadow: 0 0 8px rgba(155,89,245,0.25);}
-    .cargo-pill.selected-ambos{background:rgba(245,166,35,.1);border-color:var(--am);color:var(--am);box-shadow: 0 0 8px rgba(245,166,35,0.25);}
+    .cargo-pill:hover{border-color:var(--ba);color:var(--t1)}
+    .cargo-pill.selected-volume{background:#e9f6ef;border-color:#9dd3b4;color:#1f7a48}
+    .cargo-pill.selected-mix{background:#fcebeb;border-color:#f2c9c9;color:#b31217}
+    .cargo-pill.selected-ambos{background:#fbf2e0;border-color:#ecd6a6;color:#946213}
 
     /* Section divider */
     .section-divider{
@@ -397,7 +331,7 @@
 
     /* Horários inner card */
     .inner-card{
-      background:rgba(2,6,18,.45);
+      background:var(--card);
       border:1px solid var(--b);border-radius:var(--r-lg);
       padding:20px;margin-bottom:18px;
     }
@@ -409,28 +343,20 @@
 
     /* ── BUTTONS ─────────────────────────────────────────────────────────── */
     .btn{
-      background:var(--grad);color:#fff;border:none;
-      padding:13px 26px;border-radius:var(--r-md);
+      background:var(--a);color:#fff;border:none;
+      padding:12px 24px;border-radius:var(--r-md);
       font-weight:700;font-size:14px;font-family:inherit;
       cursor:pointer;transition:var(--tr);
       display:inline-flex;align-items:center;justify-content:center;gap:9px;
-      box-shadow:0 4px 16px rgba(79,147,255,.22);position:relative;overflow:hidden;
     }
-    .btn::before{content:'';position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.1),transparent);opacity:0;transition:.2s}
-    .btn:hover::before{opacity:1}
-    .btn:hover{
-      transform:translateY(-2px) scale(1.02);
-      box-shadow:0 8px 28px rgba(79,147,255,.38);
-    }
-    .btn:active{
-      transform:translateY(0) scale(0.98);
-    }
+    .btn:hover{background:#b31217}
+    .btn:active{background:#910e14}
     .btn-sm{padding:9px 16px;font-size:13px}
     .btn-ghost{
-      background:rgba(79,147,255,.07);color:var(--a);
-      border:1px solid rgba(79,147,255,.18);box-shadow:none;
+      background:#fcebeb;color:var(--a);
+      border:1px solid #f6d2d2;
     }
-    .btn-ghost:hover{background:rgba(79,147,255,.14);box-shadow:none;transform: translateY(-1px);}
+    .btn-ghost:hover{background:#fbe2e2}
 
     /* ── METRICS ─────────────────────────────────────────────────────────── */
     .metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
@@ -441,11 +367,10 @@
       transition:var(--tr);
     }
     .metric-card:hover {
-      transform: translateY(-1px);
-      border-color: rgba(79,147,255,0.18);
+      border-color: var(--ba);
     }
     .metric-label{font-size:10.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px}
-    .metric-val{font-size:22px;font-weight:700;color:var(--t2);font-variant-numeric:tabular-nums}
+    .metric-val{font-size:22px;font-weight:700;color:var(--t1);font-variant-numeric:tabular-nums}
     .metric-val.active{color:var(--a)}
     .metric-val.done{color:var(--em)}
     .metric-unit{font-size:11px;color:var(--t3)}
@@ -457,9 +382,9 @@
       display:flex;flex-direction:column;gap:6px;
       transition:var(--tr);
     }
-    .recent-item:hover{border-color:var(--bb);background:var(--hover);transform: translateY(-1.5px);}
+    .recent-item:hover{border-color:var(--ba);background:var(--hover)}
     .recent-row{display:flex;align-items:center;justify-content:space-between}
-    .recent-nota{font-weight:700;font-size:14px;color:#fff}
+    .recent-nota{font-weight:700;font-size:14px;color:var(--t1)}
     .recent-empresa{font-size:12px;color:var(--t2);margin-top:2px}
     .recent-meta{font-size:11px;color:var(--t3)}
 
@@ -469,37 +394,38 @@
       padding:3px 10px;border-radius:50px;
       font-size:11px;font-weight:700;letter-spacing:.3px;white-space:nowrap;
     }
-    .badge-green{background:rgba(16,212,148,.1);color:var(--em);border:1px solid rgba(16,212,148,.2)}
-    .badge-amber{background:rgba(245,166,35,.1);color:var(--am);border:1px solid rgba(245,166,35,.2)}
-    .badge-rose {background:rgba(244,63,110,.1);color:var(--rose);border:1px solid rgba(244,63,110,.2)}
-    .badge-blue {background:rgba(79,147,255,.1);color:var(--a);border:1px solid rgba(79,147,255,.2)}
+    .badge-green{background:#e9f6ef;color:#1f7a48;border:1px solid #bfe6cc}
+    .badge-amber{background:#fbf2e0;color:#946213;border:1px solid #ecd6a6}
+    .badge-rose {background:#fdeded;color:#b3392f;border:1px solid #f3c9c9}
+    .badge-blue {background:#fcebeb;color:var(--a);border:1px solid #f6d2d2}
 
     /* ── TABLE ───────────────────────────────────────────────────────────── */
     .table-wrap{overflow-x:auto;border-radius:var(--r-lg);border:1px solid var(--b)}
     table{width:100%;border-collapse:collapse;font-size:13px}
     th{
-      background:rgba(8,18,38,.9);color:var(--t2);
-      font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
-      padding:13px 18px;border-bottom:1px solid var(--bb);white-space:nowrap;
+      background:var(--card);color:var(--t2);
+      font-size:10.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
+      padding:10px 11px;border-bottom:1px solid var(--bb);white-space:nowrap;
     }
     td{
-      padding:13px 18px;border-bottom:1px solid var(--b);
-      color:var(--t1);background:rgba(5,13,26,.2);
-      vertical-align:middle;
+      padding:9px 11px;border-bottom:1px solid var(--b);
+      color:var(--t1);background:var(--surf);
+      vertical-align:middle;font-size:12.5px;
     }
     tr:last-child td{border-bottom:none}
-    tr:hover td{background:rgba(20,40,80,.25)}
+    tr:hover td{background:var(--hover)}
     td.dim{color:var(--t3);font-size:12px}
 
     /* ── TOAST ───────────────────────────────────────────────────────────── */
     #toasts{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:8px}
     .toast{
-      background:#0b1a30;border-radius:12px;
-      box-shadow:0 12px 36px rgba(0,0,0,.5);
+      background:var(--surf);border-radius:12px;
+      box-shadow:0 8px 28px rgba(16,24,40,.16);
+      border:1px solid var(--b);
       padding:14px 20px;
       display:flex;align-items:center;gap:12px;
       min-width:290px;max-width:380px;
-      animation:toastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation:toastIn 0.3s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
       border-left:4px solid var(--a);
     }
     .toast.ok{border-left-color:var(--em)}
@@ -516,7 +442,7 @@
     .filter-bar input,.filter-bar select{margin:0;max-width:260px}
     input.has-error {
       border-color: var(--rose) !important;
-      box-shadow: 0 0 0 4px rgba(255, 0, 85, 0.18) !important;
+      box-shadow: 0 0 0 3px rgba(197,59,59,.16) !important;
     }
     .section-header-row {
       display: flex;
@@ -530,8 +456,8 @@
       flex-grow: 1;
     }
     .btn-clear-section {
-      background: rgba(255, 0, 85, 0.08);
-      border: 1px solid rgba(255, 0, 85, 0.15);
+      background: #fdeded;
+      border: 1px solid #f3c9c9;
       color: var(--rose);
       width: 28px;
       height: 28px;
@@ -541,20 +467,145 @@
       justify-content: center;
       cursor: pointer;
       font-size: 13px;
-      transition: all 0.2s ease;
+      transition: all 0.18s ease;
       margin-left: 12px;
     }
     .btn-clear-section:hover {
-      background: rgba(255, 0, 85, 0.18);
-      border-color: rgba(255, 0, 85, 0.3);
-      transform: translateY(-1px);
+      background: #f9dede;
+      border-color: #edbcbc;
     }
-    .btn-clear-section:active {
-      transform: translateY(0);
+
+    /* ── PENDENTE: botões do formulário ─────────────────────────────────── */
+    .form-actions{display:flex;gap:12px;margin-top:6px}
+    .form-actions .btn{flex:1}
+    .btn-pendente{
+      background:#fbf2e0;
+      color:#946213;
+      border:1px solid #ecd6a6;
     }
+    .btn-pendente:hover{background:#f7e9cd}
+
+    /* ── HISTÓRICO: legenda + cores por estado ──────────────────────────── */
+    .hist-legend{display:flex;gap:20px;align-items:center;margin-bottom:14px;font-size:12px;color:var(--t2);flex-wrap:wrap}
+    .hist-legend .dot{display:inline-flex;align-items:center;gap:7px}
+    .hist-legend .sq{width:11px;height:11px;border-radius:3px;display:inline-block}
+    .sq-ok{background:var(--em)}
+    .sq-pend{background:var(--red)}
+
+    tr.linha-ok   td{background:#f4faf6}
+    tr.linha-ok   td:first-child{border-left:3px solid var(--em)}
+    tr.linha-ok:hover td{background:#eaf6ee}
+    tr.linha-pend td{background:#fdf4f3}
+    tr.linha-pend td:first-child{border-left:3px solid var(--red)}
+    tr.linha-pend:hover td{background:#fbeae8}
+
+    /* ── HISTÓRICO: botões de ação na linha ─────────────────────────────── */
+    .acoes-cell{white-space:nowrap;display:flex;gap:6px;align-items:center}
+    .acao-btn{
+      background:#fcebeb;border:1px solid #f6d2d2;
+      color:var(--a);width:30px;height:30px;border-radius:7px;cursor:pointer;
+      font-size:14px;display:inline-flex;align-items:center;justify-content:center;
+      transition:var(--tr);padding:0;
+    }
+    .acao-btn:hover{background:#fbe2e2}
+    .acao-editar{color:#946213;border-color:#ecd6a6;background:#fbf2e0}
+    .acao-editar:hover{background:#f7e9cd}
+    .acao-ok{color:#1f7a48;border-color:#bfe6cc;background:#e9f6ef;cursor:default}
+    .acao-ok:hover{background:#e9f6ef}
+
+    /* ── HISTÓRICO: editor inline de pendência ──────────────────────────── */
+    tr.pend-editor-row > td{background:var(--card);padding:0;border-left:3px solid var(--am)}
+    /* fica preso à esquerda mesmo com a rolagem horizontal da tabela */
+    .pend-editor{padding:18px 22px;position:sticky;left:0;width:min(1120px,94vw);box-sizing:border-box}
+    .pend-editor-title{
+      font-size:12.5px;font-weight:700;color:#946213;
+      text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;
+      display:flex;align-items:center;gap:8px;
+    }
+    .pend-editor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:16px}
+    .pend-editor-grid .form-group{margin-bottom:0}
+    .pend-editor-grid label{font-size:11px}
+    .pend-editor-actions{display:flex;gap:10px;justify-content:flex-end}
+    .btn-salvar-pend{background:#e9f6ef;color:#1f7a48;border:1px solid #bfe6cc}
+    .btn-salvar-pend:hover{background:#dcefe4}
+    .btn-cancelar-pend{background:var(--surf);color:var(--t2);border:1px solid var(--b)}
+    .btn-cancelar-pend:hover{background:var(--hover)}
+
+    /* ── Botão de tema + seção Ocorrência opcional ───────────────────────── */
+    .btn-tema{
+      background:var(--card);border:1px solid var(--b);color:var(--t2);
+      width:36px;height:36px;border-radius:9px;cursor:pointer;
+      font-size:16px;display:inline-flex;align-items:center;justify-content:center;
+      transition:var(--tr);
+    }
+    .btn-tema:hover{background:var(--hover);color:var(--t1)}
+    #grupo-ocorrencia .oc-hint{font-size:11px}
+    /* Numa Ocorrência ("Não recebeu") as horas pós-chegada não se aplicam → esmaecidas. */
+    #bloco-horarios.horarios-opcional .hora-pos-chegada{opacity:.55}
+    /* Cards de ocorrência (uma NF pode ter várias). */
+    .oc-card{border:1px solid var(--b);border-radius:12px;padding:14px 16px;margin-bottom:12px;background:var(--card)}
+    .oc-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .oc-card-title{font-size:12px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.4px}
+    .oc-card-remove{background:none;border:none;color:var(--rose);cursor:pointer;font-size:12px;font-weight:600;padding:2px 6px;border-radius:6px}
+    .oc-card-remove:hover{background:var(--hover)}
+    .btn-add-oc{background:var(--inp);border:1px dashed var(--bb);color:var(--a);cursor:pointer;
+      padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600;width:100%}
+    .btn-add-oc:hover{background:var(--hover)}
+
+    /* ── TEMA ESCURO (opcional; padrão é claro) ──────────────────────────── */
+    :root[data-theme="dark"]{
+      --black:#e7ebf2; --white:#0f1420; --white20:#2a3346; --white10:#1c2334;
+      --blue:#ef4a44; --red:#f06a6a;
+      --void:#0f1420; --deep:#0b0f18; --surf:#171d2b; --card:#1c2334; --hover:#222a3d; --inp:#131926;
+      --b:#2a3346; --bb:#313c52; --ba:#47536e;
+      --a:#ef4a44; --a2:#8a94a6; --grad:#ef4a44;
+      --em:#3fce87; --am:#e0a34a; --rose:#f06a6a; --red:#f06a6a;
+      --t1:#e7ebf2; --t2:#aab4c6; --t3:#6b7688;
+    }
+    :root[data-theme="dark"] select option{background:#171d2b;color:#e7ebf2}
+    :root[data-theme="dark"] ::-webkit-scrollbar-thumb{background:#2f3a52}
+    :root[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:#3f4d6b}
+    :root[data-theme="dark"] .btn:hover,
+    :root[data-theme="dark"] .btn-login:hover,
+    :root[data-theme="dark"] .tab-btn.active:hover{background:#3f76d0}
+    :root[data-theme="dark"] .btn:active,
+    :root[data-theme="dark"] .btn-login:active{background:#c6322c}
+    :root[data-theme="dark"] .card-title-badge{background:rgba(239,74,68,.16);color:#f29a94}
+    :root[data-theme="dark"] .btn-ghost{background:rgba(239,74,68,.14);color:#f29a94;border-color:rgba(239,74,68,.3)}
+    :root[data-theme="dark"] .btn-ghost:hover{background:rgba(239,74,68,.22)}
+    :root[data-theme="dark"] .ac-item:hover{background:rgba(239,74,68,.14)}
+    :root[data-theme="dark"] .cargo-pill.selected-volume{background:rgba(63,206,135,.14);border-color:rgba(63,206,135,.4);color:#4ade80}
+    :root[data-theme="dark"] .cargo-pill.selected-mix{background:rgba(239,74,68,.16);border-color:rgba(239,74,68,.4);color:#f29a94}
+    :root[data-theme="dark"] .cargo-pill.selected-ambos{background:rgba(224,163,74,.14);border-color:rgba(224,163,74,.4);color:#e0a34a}
+    :root[data-theme="dark"] .badge-green{background:rgba(63,206,135,.14);color:#4ade80;border-color:rgba(63,206,135,.3)}
+    :root[data-theme="dark"] .badge-amber{background:rgba(224,163,74,.14);color:#e0a34a;border-color:rgba(224,163,74,.3)}
+    :root[data-theme="dark"] .badge-rose{background:rgba(240,106,106,.14);color:#f28b8b;border-color:rgba(240,106,106,.3)}
+    :root[data-theme="dark"] .badge-blue{background:rgba(239,74,68,.16);color:#f29a94;border-color:rgba(239,74,68,.35)}
+    :root[data-theme="dark"] .login-err{background:rgba(240,106,106,.12);border-color:rgba(240,106,106,.3);color:#f0a3a3}
+    :root[data-theme="dark"] .btn-sair:hover{background:rgba(240,106,106,.12);border-color:rgba(240,106,106,.3);color:#f0a3a3}
+    :root[data-theme="dark"] .btn-clear-section{background:rgba(240,106,106,.12);border-color:rgba(240,106,106,.28);color:#f28b8b}
+    :root[data-theme="dark"] .btn-clear-section:hover{background:rgba(240,106,106,.2);border-color:rgba(240,106,106,.4)}
+    :root[data-theme="dark"] .btn-pendente{background:rgba(224,163,74,.14);color:#e0a34a;border-color:rgba(224,163,74,.3)}
+    :root[data-theme="dark"] .btn-pendente:hover{background:rgba(224,163,74,.22)}
+    :root[data-theme="dark"] tr.linha-ok td{background:rgba(63,206,135,.07)}
+    :root[data-theme="dark"] tr.linha-ok:hover td{background:rgba(63,206,135,.12)}
+    :root[data-theme="dark"] tr.linha-pend td{background:rgba(240,106,106,.09)}
+    :root[data-theme="dark"] tr.linha-pend:hover td{background:rgba(240,106,106,.15)}
+    :root[data-theme="dark"] .acao-btn{background:rgba(239,74,68,.16);border-color:rgba(239,74,68,.35);color:#f29a94}
+    :root[data-theme="dark"] .acao-btn:hover{background:rgba(239,74,68,.26)}
+    :root[data-theme="dark"] .acao-editar{background:rgba(224,163,74,.14);border-color:rgba(224,163,74,.35);color:#e0a34a}
+    :root[data-theme="dark"] .acao-editar:hover{background:rgba(224,163,74,.24)}
+    :root[data-theme="dark"] .acao-ok{background:rgba(63,206,135,.12);border-color:rgba(63,206,135,.3);color:#4ade80}
+    :root[data-theme="dark"] .acao-ok:hover{background:rgba(63,206,135,.12)}
+    :root[data-theme="dark"] .pend-editor-title{color:#e0a34a}
+    :root[data-theme="dark"] .btn-salvar-pend{background:rgba(63,206,135,.14);color:#4ade80;border-color:rgba(63,206,135,.35)}
+    :root[data-theme="dark"] .btn-salvar-pend:hover{background:rgba(63,206,135,.22)}
+    :root[data-theme="dark"] .card:hover{box-shadow:0 2px 4px rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35)}
   </style>
 </head>
 <body>
+
+<script>/* aplica o tema salvo antes de pintar, evitando flash */try{if(localStorage.getItem('cpd_theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
 
 <div class="sunrise-sunset">
   <div class="blue-to-white-gradient"></div>
@@ -566,7 +617,7 @@
 ═══════════════════════════════════════════════════════════════════════════ -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-logo">📦</div>
+    <div class="login-logo"></div>
     <div class="login-title">CPD Opção</div>
     <div class="login-sub">Controle de Recebimentos &amp; Ocorrências</div>
 
@@ -574,7 +625,7 @@
     <div id="form-entrar">
       <div class="form-field">
         <label>E-mail</label>
-        <input type="email" id="login-email" placeholder="admin@exemplo.com" autocomplete="email">
+        <input type="email" id="login-email" placeholder="vitor@opcao.com.br" autocomplete="email">
       </div>
       <div class="form-field">
         <label>Senha</label>
@@ -595,7 +646,7 @@
   <!-- HEADER -->
   <header>
     <div class="brand">
-      <div class="brand-icon">📦</div>
+      <div class="brand-icon"></div>
       <div>
         <div class="brand-name">CPD Opção</div>
         <div class="brand-tag">Recebimentos &amp; Ocorrências</div>
@@ -616,6 +667,7 @@
           <div class="user-cargo" id="user-cargo">—</div>
         </div>
       </div>
+      <button class="btn-tema" id="btn-tema" onclick="alternarTema()" title="Alternar tema claro/escuro" aria-label="Alternar tema">🌙</button>
       <button class="btn-sair" onclick="sair()">Sair</button>
     </div>
   </header>
@@ -694,8 +746,7 @@
                 <select id="campo-entrega" required>
                   <option value="">Selecione...</option>
                   <option value="CIF">CIF — Por conta do fornecedor</option>
-                  <option value="FOB">FOB — Retirada própria</option>
-                  <option value="OUTRO">Retransito / Outro</option>
+                  <option value="TRANSFERENCIA">Transferência</option>
                 </select>
               </div>
               <div class="form-group">
@@ -715,26 +766,26 @@
             </div>
 
             <!-- Horários -->
-            <div class="inner-card">
+            <div class="inner-card" id="bloco-horarios">
               <div class="inner-card-title">🕒 Horários CPD</div>
               <div class="form-row">
                 <div class="form-group">
                   <label for="hora-chegada">Chegada CPD</label>
-                  <input type="time" id="hora-chegada" oninput="calcularTempos(false)" onchange="calcularTempos(true)" onkeyup="calcularTempos()" onchange="calcularTempos()" onblur="verificarBlurHorario(this)">
+                  <input type="time" id="hora-chegada" oninput="calcularTempos()" onblur="verificarBlurHorario(this)">
                 </div>
-                <div class="form-group">
+                <div class="form-group hora-pos-chegada">
                   <label for="hora-liberado">Liberado — Faturamento</label>
-                  <input type="time" id="hora-liberado" oninput="calcularTempos(false)" onchange="calcularTempos(true)" onkeyup="calcularTempos()" onchange="calcularTempos()" onblur="verificarBlurHorario(this)">
+                  <input type="time" id="hora-liberado" oninput="calcularTempos()" onblur="verificarBlurHorario(this)">
                 </div>
               </div>
               <div class="form-row">
-                <div class="form-group">
+                <div class="form-group hora-pos-chegada">
                   <label for="hora-inicio">Início Descarga</label>
-                  <input type="time" id="hora-inicio" oninput="calcularTempos(false)" onchange="calcularTempos(true)" onkeyup="calcularTempos()" onchange="calcularTempos()" onblur="verificarBlurHorario(this)">
+                  <input type="time" id="hora-inicio" oninput="calcularTempos()" onblur="verificarBlurHorario(this)">
                 </div>
-                <div class="form-group">
+                <div class="form-group hora-pos-chegada">
                   <label for="hora-final">Fim Recebimento</label>
-                  <input type="time" id="hora-final" oninput="calcularTempos(false)" onchange="calcularTempos(true)" onkeyup="calcularTempos()" onchange="calcularTempos()" onblur="verificarBlurHorario(this)">
+                  <input type="time" id="hora-final" oninput="calcularTempos()" onblur="verificarBlurHorario(this)">
                 </div>
               </div>
             </div>
@@ -749,7 +800,7 @@
               <div class="form-group">
                 <label for="campo-sucesso">Resultado</label>
                 <select id="campo-sucesso" onchange="verificarSucessoStatus()" required>
-                  <option value="0">Em Processamento</option>
+                  <option value="" selected>Selecione o Resultado...</option>
                   <option value="1">Sucesso</option>
                   <option value="2">Ocorrência Pendente</option>
                 </select>
@@ -762,26 +813,10 @@
               </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="campo-setor">Setor Responsável</label>
-                <select id="campo-setor" onchange="filtrarResolucoes()">
-                  <option value="">Selecione o Setor...</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="campo-ocorrencia">Ocorrência</label>
-                <select id="campo-ocorrencia" onchange="filtrarResolucoes()">
-                  <option value="">Selecione a Ocorrência...</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="campo-resolucao">Resolução Sugerida</label>
-              <select id="campo-resolucao">
-                <option value="">Selecione a Resolução...</option>
-              </select>
+            <!-- Ocorrências (só quando Resultado = Ocorrência Pendente). Uma NF pode ter várias. -->
+            <div id="grupo-ocorrencia" style="display:none">
+              <div id="ocorrencias-lista"></div>
+              <button type="button" class="btn-add-oc" id="btn-add-ocorrencia" onclick="adicionarCardOcorrencia()">➕ Adicionar ocorrência</button>
             </div>
 
             <div class="form-group">
@@ -789,9 +824,16 @@
               <textarea id="campo-obs" rows="2" placeholder="Detalhes adicionais..."></textarea>
             </div>
 
-            <button type="submit" class="btn" style="width:100%;padding:15px;font-size:15px;">
-              💾 Salvar Recebimento
-            </button>
+            <div class="form-actions">
+              <button type="submit" class="btn" style="padding:15px;font-size:15px;">
+                💾 Salvar
+              </button>
+              <button type="button" class="btn btn-pendente" style="padding:15px;font-size:15px;"
+                      onclick="salvarPendente()"
+                      title="Salva o que você já tem. Os campos em branco ficam pendentes para completar depois, no Histórico.">
+                ⏳ Pendente
+              </button>
+            </div>
           </form>
         </div>
 
@@ -817,11 +859,12 @@
                 <div class="metric-unit">minutos</div>
               </div>
             </div>
-            <div style="font-size:11.5px;color:var(--t3);line-height:1.7;padding:12px;background:rgba(0,0,0,.2);border-radius:var(--r-md)">
+            <div style="font-size:11.5px;color:var(--t3);line-height:1.7;padding:12px;background:var(--card);border:1px solid var(--b);border-radius:var(--r-md)">
               <strong style="color:var(--t2)">Regras automáticas:</strong><br>
               • NF-e = Chegada → Liberação<br>
               • Espera = Chegada → Início Descarga<br>
-              • Se Resultado = Sucesso ou todos os horários preenchidos → status <strong style="color:var(--em)">Recebeu</strong>
+              • Recebimento = Início Descarga → Fim<br>
+              • <strong style="color:var(--t2)">Status</strong> (Recebeu / Não recebeu) é <strong style="color:var(--t2)">manual</strong>
             </div>
           </div>
 
@@ -851,6 +894,11 @@
           </select>
         </div>
 
+        <div class="hist-legend">
+          <span class="dot"><span class="sq sq-ok"></span> Completo</span>
+          <span class="dot"><span class="sq sq-pend"></span> Pendente — clique em ✏️ para completar os campos em branco</span>
+        </div>
+
         <div class="table-wrap">
           <table>
             <thead>
@@ -863,10 +911,10 @@
                 <th>Recebedor</th>
                 <th>Carga</th>
                 <th>Horários</th>
-                <th>M</th>
                 <th>Status</th>
                 <th>Setor</th>
                 <th>Lançado por</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody id="historico-tabela"></tbody>
@@ -979,8 +1027,29 @@ let DB = { lojas:[], compradores:[], recebedores:[], fornecedores:[], setores:[]
 let AUTH = { token: sessionStorage.getItem('cpd_token'), nome: sessionStorage.getItem('cpd_nome'), cargo: sessionStorage.getItem('cpd_cargo'), pk: sessionStorage.getItem('cpd_pk') };
 let tipoCargaSel = null;
 
+/* ── TEMA (claro/escuro opcional; padrão claro) ───────────────────────── */
+function aplicarTema(t) {
+  const root = document.documentElement;
+  if (t === 'dark') root.setAttribute('data-theme', 'dark');
+  else root.removeAttribute('data-theme');
+  const btn = document.getElementById('btn-tema');
+  if (btn) btn.textContent = (t === 'dark') ? '☀️' : '🌙';
+}
+function alternarTema() {
+  const atual = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const novo = atual === 'dark' ? 'light' : 'dark';
+  try { localStorage.setItem('cpd_theme', novo); } catch (e) {}
+  aplicarTema(novo);
+}
+function initTema() {
+  let t = 'light';
+  try { t = localStorage.getItem('cpd_theme') || 'light'; } catch (e) {}
+  aplicarTema(t);
+}
+
 /* ── INICIALIZAÇÃO ────────────────────────────────────────────────────── */
 window.addEventListener('load', () => {
+  initTema();
   document.getElementById('campo-data').valueAsDate = new Date();
   if (AUTH.token) {
     mostrarApp();
@@ -1065,8 +1134,26 @@ function mostrarApp() {
   document.getElementById('user-avatar').textContent = ini;
   document.getElementById('badge-usuario-logado').textContent = AUTH.nome;
 
+  // Controle de acesso: só o administrador (Vitor) vê/mexe nos Cadastros.
+  aplicarPermissoes();
+
   carregarOpcoes();
   carregarRecentes();
+}
+
+// Admin = cargo "ADMIN" (só o Vitor). Os demais (CPD) não acessam Cadastros.
+function ehAdmin() {
+  return (AUTH.cargo || '').trim().toUpperCase() === 'ADMIN';
+}
+
+function aplicarPermissoes() {
+  const admin = ehAdmin();
+  const navAdmin = document.getElementById('nav-admin');
+  if (navAdmin) navAdmin.style.display = admin ? '' : 'none';
+  // Se um não-admin estiver na aba de Cadastros, volta para o lançamento.
+  if (!admin && document.getElementById('sec-admin')?.classList.contains('active')) {
+    switchTab('form');
+  }
 }
 
 function sair() {
@@ -1080,6 +1167,7 @@ function sair() {
 
 /* ── NAVEGAÇÃO ────────────────────────────────────────────────────────── */
 function switchTab(id) {
+  if (id === 'admin' && !ehAdmin()) { showToast('Acesso restrito ao administrador.', 'err'); return; }
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
   document.getElementById('nav-'+id)?.classList.add('active');
@@ -1135,27 +1223,23 @@ function limparSecao(secao) {
       }
     });
     if (typeof calcularTempos === 'function') {
-      calcularTempos(false);
+      calcularTempos();
     }
   }
   else if (secao === 'ocorrencia') {
     const sucessoInput = document.getElementById('campo-sucesso');
-    if (sucessoInput) sucessoInput.value = '0';
-    
+    if (sucessoInput) sucessoInput.value = '';   // volta o Resultado ao vazio (neutro)
+
     const statusInput = document.getElementById('campo-status');
-    if (statusInput) statusInput.value = '';
-    
-    const setorInput = document.getElementById('campo-setor');
-    if (setorInput) setorInput.value = '';
-    
-    const ocorrenciaInput = document.getElementById('campo-ocorrencia');
-    if (ocorrenciaInput) ocorrenciaInput.value = '';
-    
-    const resolucaoInput = document.getElementById('campo-resolucao');
-    if (resolucaoInput) resolucaoInput.value = '';
-    
+    if (statusInput) statusInput.value = '';     // Status é manual → limpa também
+
+    resetOcorrencias();  // limpa os cards de ocorrência
+
     const obsInput = document.getElementById('campo-obs');
     if (obsInput) obsInput.value = '';
+
+    // Re-sincroniza Status e esconde o grupo de ocorrências (estado neutro).
+    verificarSucessoStatus();
   }
   
   showToast('Seção limpa com sucesso!', 'ok');
@@ -1180,11 +1264,10 @@ async function carregarOpcoes() {
     preencherSel('campo-comprador', DB.compradores, 'pk','nome_comprador',         'Selecione...');
     preencherSel('campo-recebedor', DB.recebedores, 'pk','nome_recebedor',         'Selecione...');
     preencherSel('campo-status',    DB.statuses,    'pk','nome_status',            'Selecione o Status...');
-    preencherSel('campo-setor',     DB.setores,     'pk','nome_setor',             'Selecione o Setor...');
-    preencherSel('campo-ocorrencia',DB.ocorrencias, 'pk','descricao_ocorrencia',   'Selecione a Ocorrência...');
     preencherSel('adm-res-setor',   DB.setores,     'pk','nome_setor',             'Selecione...');
     preencherSel('adm-res-oc',      DB.ocorrencias, 'pk','descricao_ocorrencia',   'Selecione...');
     configurarAC(DB.fornecedores);
+    verificarSucessoStatus();  // Resultado começa vazio → estado neutro; cards de ocorrência sob demanda
   } catch(e) { showToast('Erro ao carregar dados do banco.', 'err'); }
 }
 
@@ -1243,24 +1326,94 @@ function selecionarCarga(el) {
   el.classList.add(cls[tipoCargaSel]||'');
 }
 
-/* ── RESOLUÇÕES ───────────────────────────────────────────────────────── */
-function filtrarResolucoes() {
-  const sId = document.getElementById('campo-setor').value;
-  const oId = document.getElementById('campo-ocorrencia').value;
-  const sel = document.getElementById('campo-resolucao');
+/* ── OCORRÊNCIAS (cards) ──────────────────────────────────────────────── */
+// Uma NF pode ter várias ocorrências → cada card vira uma linha no banco (mesmo topo).
+function _opcoesSel(items, val, txt, def) {
+  return `<option value="">${def}</option>` +
+    (items||[]).map(i => `<option value="${i[val]}">${i[txt]}</option>`).join('');
+}
+function adicionarCardOcorrencia() {
+  const lista = document.getElementById('ocorrencias-lista');
+  if (!lista) return;
+  const card = document.createElement('div');
+  card.className = 'oc-card';
+  card.innerHTML = `
+    <div class="oc-card-head">
+      <span class="oc-card-title">Ocorrência</span>
+      <button type="button" class="oc-card-remove" onclick="removerCardOcorrencia(this)">🗑 remover</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Setor Responsável</label>
+        <select class="oc-setor" onchange="filtrarResolucoesCard(this)">${_opcoesSel(DB.setores,'pk','nome_setor','Selecione o Setor...')}</select>
+      </div>
+      <div class="form-group">
+        <label>Ocorrência</label>
+        <select class="oc-ocorrencia" onchange="filtrarResolucoesCard(this)">${_opcoesSel(DB.ocorrencias,'pk','descricao_ocorrencia','Selecione a Ocorrência...')}</select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Resolução Sugerida</label>
+      <select class="oc-resolucao"><option value="">Selecione a Resolução...</option></select>
+    </div>`;
+  lista.appendChild(card);
+  renumerarOcorrencias();
+}
+function removerCardOcorrencia(btn) {
+  const lista = document.getElementById('ocorrencias-lista');
+  const cards = lista ? lista.querySelectorAll('.oc-card') : [];
+  if (cards.length <= 1) { showToast('É preciso ao menos uma ocorrência.', 'err'); return; }
+  btn.closest('.oc-card').remove();
+  renumerarOcorrencias();
+}
+function renumerarOcorrencias() {
+  document.querySelectorAll('#ocorrencias-lista .oc-card').forEach((c,i) => {
+    const t = c.querySelector('.oc-card-title'); if (t) t.textContent = `Ocorrência ${i+1}`;
+    const rm = c.querySelector('.oc-card-remove');
+    if (rm) rm.style.display = document.querySelectorAll('#ocorrencias-lista .oc-card').length > 1 ? '' : 'none';
+  });
+}
+function resetOcorrencias() {
+  const lista = document.getElementById('ocorrencias-lista');
+  if (lista) lista.innerHTML = '';
+}
+function filtrarResolucoesCard(selEl) {
+  const card = selEl.closest('.oc-card');
+  if (!card) return;
+  const sId = card.querySelector('.oc-setor').value;
+  const oId = card.querySelector('.oc-ocorrencia').value;
+  const sel = card.querySelector('.oc-resolucao');
   sel.innerHTML = '<option value="">Selecione a Resolução...</option>';
   if (!sId || !oId) return;
   const hits = DB.resolucoes.filter(r => r.setor_fk==sId && r.ocorrencia_fk==oId);
   hits.forEach(r => { const o=document.createElement('option'); o.value=r.descricao_resolucao; o.textContent=r.descricao_resolucao; sel.appendChild(o); });
   if (!hits.length) sel.innerHTML += '<option value="Sem resolução cadastrada">Sem resolução cadastrada</option>';
 }
+// Coleta os cards → lista de ocorrências para o backend (cada uma vira uma linha).
+function coletarOcorrencias() {
+  return Array.from(document.querySelectorAll('#ocorrencias-lista .oc-card')).map(c => ({
+    setor_fk:      +c.querySelector('.oc-setor').value      || null,
+    ocorrencia_fk: +c.querySelector('.oc-ocorrencia').value || null,
+    resolucao:      c.querySelector('.oc-resolucao').value  || null,
+  }));
+}
 
 /* ── SUCESSO STATUS ───────────────────────────────────────────────────── */
 function verificarSucessoStatus() {
   const v = document.getElementById('campo-sucesso').value;
-  const sel = document.getElementById('campo-status');
-  if (v==='1') { const f=DB.statuses.find(s=>s.nome_status==='Recebeu'); if(f) sel.value=f.pk; }
-  if (v==='2') { const f=DB.statuses.find(s=>s.nome_status==='Não recebeu'); if(f) sel.value=f.pk; }
+  // Status é MANUAL — o Resultado NÃO mexe mais nele. Aqui só controlamos a seção
+  // de ocorrências e as horas conforme o Resultado.
+  const ehDiverg = v==='2';
+  // O grupo de ocorrências só aparece na divergência (Ocorrência Pendente).
+  const grupo = document.getElementById('grupo-ocorrencia');
+  if (grupo) grupo.style.display = ehDiverg ? '' : 'none';
+  // Numa Ocorrência as horas pós-chegada não se aplicam (sem descarga) → esmaecidas.
+  const horarios = document.getElementById('bloco-horarios');
+  if (horarios) horarios.classList.toggle('horarios-opcional', ehDiverg);
+  // Garante ao menos um card ao entrar em divergência.
+  if (ehDiverg && document.querySelectorAll('#ocorrencias-lista .oc-card').length === 0) {
+    adicionarCardOcorrencia();
+  }
 }
 
 /* ── TEMPOS ───────────────────────────────────────────────────────────── */
@@ -1322,9 +1475,11 @@ function calcularTempos() {
   setMetric('m-esp', diff(ch,ini));
   setMetric('m-rec', diff(ini,fim));
 
+  // Com os 4 horários preenchidos, houve descarga → sugere Resultado = Sucesso.
+  // (O Status é manual: não é alterado aqui.)
   if(ch&&lib&&ini&&fim) {
-    const r=DB.statuses.find(s=>s.nome_status==='Recebeu');
-    if(r){ document.getElementById('campo-status').value=r.pk; document.getElementById('campo-sucesso').value='1'; }
+    const sel=document.getElementById('campo-sucesso');
+    if(sel.value!=='1'){ sel.value='1'; verificarSucessoStatus(); }  // mantém os grupos coerentes
   }
 
   // Validar ordem dos horários (apenas para aplicar as classes de erro visualmente)
@@ -1345,10 +1500,66 @@ function setMetric(id, val) {
 }
 
 /* ── SALVAR RECEBIMENTO ───────────────────────────────────────────────── */
+// Monta o corpo do recebimento a partir do formulário.
+// Campos completáveis vazios viram null (para o servidor marcá-los como pendentes).
+function montarBodyRecebimento() {
+  const fid = document.getElementById('campo-fornecedor-id').value;
+  const flag = +document.getElementById('campo-sucesso').value || 0;
+  return {
+    data:          document.getElementById('campo-data').value,
+    loja_fk:       +document.getElementById('campo-loja').value,
+    nota:          document.getElementById('campo-nota').value,
+    fornecedor_fk: +fid,
+    comprador_fk:  +document.getElementById('campo-comprador').value  || null,
+    recebedor_fk:  +document.getElementById('campo-recebedor').value  || null,
+    tipo_entrega:  document.getElementById('campo-entrega').value      || null,
+    tipo_carga:    document.getElementById('campo-tipo-carga').value  || null,
+    hora_chegada:  document.getElementById('hora-chegada').value      || null,
+    hora_liberado: document.getElementById('hora-liberado').value     || null,
+    hora_inicio_rec: document.getElementById('hora-inicio').value     || null,
+    hora_final_rec:  document.getElementById('hora-final').value      || null,
+    sucesso_flag:  flag,
+    status_fk:     +document.getElementById('campo-status').value || null,  // manual
+    // Numa Ocorrência, manda a lista de ocorrências (cada uma vira uma linha).
+    // No Sucesso, lista vazia → uma linha só.
+    ocorrencias:   flag === 2 ? coletarOcorrencias() : [],
+    obs:           document.getElementById('campo-obs').value         || null,
+  };
+}
+
+// Mínimo obrigatório para salvar (topo + Chegada + Resultado). Devolve os faltantes.
+function faltantesMinimo() {
+  const obrig = [
+    ['campo-data',          'Data de Entrada'],
+    ['campo-loja',          'Loja'],
+    ['campo-nota',          'Nota Fiscal'],
+    ['campo-fornecedor-id', 'Fornecedor'],
+    ['campo-comprador',     'Comprador'],
+    ['campo-recebedor',     'Recebedor'],
+    ['campo-entrega',       'Tipo de Entrega'],
+    ['campo-tipo-carga',    'Tipo de Carga'],
+    ['hora-chegada',        'Chegada CPD'],
+    ['campo-sucesso',       'Resultado'],
+    ['campo-status',        'Status'],
+  ];
+  return obrig.filter(([id]) => !document.getElementById(id).value).map(([,nome]) => nome);
+}
+
+function resetFormRecebimento() {
+  document.getElementById('recebimento-form').reset();
+  document.getElementById('campo-data').valueAsDate = new Date();
+  document.getElementById('campo-fornecedor-id').value = '';
+  document.querySelectorAll('.cargo-pill').forEach(p=>p.className='cargo-pill');
+  tipoCargaSel=null;
+  resetOcorrencias();        // limpa os cards de ocorrência
+  calcularTempos();
+  verificarSucessoStatus();  // Resultado volta ao vazio → estado neutro
+}
+
+// Salvar completo (registro fica verde/OK no histórico).
 async function salvarRecebimento(e) {
   e.preventDefault();
-  
-  // Validar ordem dos horários
+
   const valResult = validarSequenciaHorarios();
   if (!valResult.valido) {
     showToast(valResult.msg, 'err');
@@ -1356,29 +1567,28 @@ async function salvarRecebimento(e) {
     return;
   }
 
-  const fid = document.getElementById('campo-fornecedor-id').value;
-  if (!fid) { showToast('Selecione um Fornecedor da lista.', 'err'); return; }
+  // Salvar completo: o mínimo (topo + Chegada + Resultado) é obrigatório...
+  const faltMin = faltantesMinimo();
+  if (faltMin.length) { showToast('Preencha: ' + faltMin.join(', ') + '.', 'err'); return; }
 
-  const body = {
-    data:          document.getElementById('campo-data').value,
-    loja_fk:       +document.getElementById('campo-loja').value,
-    nota:          document.getElementById('campo-nota').value,
-    fornecedor_fk: +fid,
-    comprador_fk:  +document.getElementById('campo-comprador').value  || null,
-    recebedor_fk:  +document.getElementById('campo-recebedor').value  || null,
-    tipo_entrega:  document.getElementById('campo-entrega').value,
-    tipo_carga:    document.getElementById('campo-tipo-carga').value  || null,
-    hora_chegada:  document.getElementById('hora-chegada').value      || null,
-    hora_liberado: document.getElementById('hora-liberado').value     || null,
-    hora_inicio_rec: document.getElementById('hora-inicio').value     || null,
-    hora_final_rec:  document.getElementById('hora-final').value      || null,
-    sucesso_flag:  +document.getElementById('campo-sucesso').value,
-    status_fk:     +document.getElementById('campo-status').value,
-    setor_fk:      +document.getElementById('campo-setor').value      || null,
-    ocorrencia_fk: +document.getElementById('campo-ocorrencia').value || null,
-    resolucao:     document.getElementById('campo-resolucao').value   || null,
-    obs:           document.getElementById('campo-obs').value         || null,
-  };
+  // ...e também os CAMPOS-CRITÉRIO aplicáveis ao Resultado (nada em branco no Salvar completo).
+  const flag = document.getElementById('campo-sucesso').value;
+  if (flag === '1') {
+    const faltH = [['hora-liberado','Liberado'],['hora-inicio','Início Descarga'],['hora-final','Fim Recebimento']]
+      .filter(([id]) => !document.getElementById(id).value).map(([,n]) => n);
+    if (faltH.length) { showToast('Para salvar (Sucesso), preencha as horas: ' + faltH.join(', ') + '.', 'err'); return; }
+  } else if (flag === '2') {
+    const cards = document.querySelectorAll('#ocorrencias-lista .oc-card');
+    if (!cards.length) { showToast('Adicione ao menos uma ocorrência.', 'err'); return; }
+    for (let i = 0; i < cards.length; i++) {
+      const c = cards[i];
+      if (!c.querySelector('.oc-setor').value || !c.querySelector('.oc-ocorrencia').value || !c.querySelector('.oc-resolucao').value) {
+        showToast(`Ocorrência ${i+1}: informe Setor, Ocorrência e Resolução.`, 'err'); return;
+      }
+    }
+  }
+
+  const body = { ...montarBodyRecebimento(), pendente: 0 };
 
   try {
     const r = await fetch('/api/recebimentos', {
@@ -1387,12 +1597,44 @@ async function salvarRecebimento(e) {
     });
     if (r.ok) {
       showToast('Recebimento salvo com sucesso!', 'ok');
-      document.getElementById('recebimento-form').reset();
-      document.getElementById('campo-data').valueAsDate = new Date();
-      document.getElementById('campo-fornecedor-id').value = '';
-      document.querySelectorAll('.cargo-pill').forEach(p=>p.className='cargo-pill');
-      tipoCargaSel=null;
-      calcularTempos();
+      resetFormRecebimento();
+      carregarRecentes();
+    } else {
+      const d = await r.json();
+      showToast(`Erro: ${d.detail||'Verifique os dados'}`, 'err');
+    }
+  } catch(ex) { showToast('Erro de conexão com o servidor.','err'); }
+}
+
+// Salvar como PENDENTE: exige só os campos que identificam a nota; o resto que
+// estiver em branco fica pendente para completar depois, no Histórico.
+async function salvarPendente() {
+  const valResult = validarSequenciaHorarios();
+  if (!valResult.valido) {
+    showToast(valResult.msg, 'err');
+    document.getElementById(valResult.id).focus();
+    return;
+  }
+
+  const faltando = faltantesMinimo();
+  if (faltando.length) {
+    showToast('Para salvar como pendente, preencha: ' + faltando.join(', ') + '.', 'err');
+    return;
+  }
+
+  const body = { ...montarBodyRecebimento(), pendente: 1 };
+
+  try {
+    const r = await fetch('/api/recebimentos', {
+      method:'POST', headers:{'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify(body)
+    });
+    if (r.ok) {
+      const d = await r.json();
+      showToast(d.pendente
+        ? 'Salvo como pendente! Complete os campos em branco no Histórico.'
+        : 'Recebimento salvo — nada ficou pendente.', 'ok');
+      resetFormRecebimento();
       carregarRecentes();
     } else {
       const d = await r.json();
@@ -1416,7 +1658,7 @@ async function carregarRecentes() {
       div.innerHTML = `
         <div class="recent-row">
           <span class="recent-nota">NF ${d.nota}</span>
-          <span class="badge ${ok?'badge-green':'badge-amber'}">${d.nome_status||'—'}</span>
+          <span class="badge ${d.pendente==1 ? 'badge-rose' : (ok?'badge-green':'badge-amber')}">${d.pendente==1 ? '⏳ Pendente' : (d.nome_status||'—')}</span>
         </div>
         <div class="recent-empresa">${d.nome_fantasia||d.razao_social}</div>
         <div class="recent-meta">
@@ -1433,45 +1675,187 @@ async function carregarRecentes() {
 }
 
 /* ── HISTÓRICO ────────────────────────────────────────────────────────── */
+let HIST_MAP = {};  // fact_id -> registro (usado pelo editor de pendência)
+
 async function atualizarHistorico() {
   const q  = document.getElementById('filtro-pesquisa').value;
   const st = document.getElementById('filtro-status').value;
   try {
     const r    = await fetch(`/api/recebimentos?busca=${encodeURIComponent(q)}&status=${encodeURIComponent(st)}`, { headers: authHeaders() });
     const data = await r.json();
+    // Pendentes primeiro (topo), depois os mais recentes.
+    data.sort((a,b) => (Number(b.pendente||0) - Number(a.pendente||0)) || (b.fact_id - a.fact_id));
     const tbody = document.getElementById('historico-tabela');
     tbody.innerHTML = '';
+    HIST_MAP = {};
+    // Lojas que o usuário pode EDITAR (as que vêm em /opcoes). O supervisor vê tudo,
+    // mas só edita as suas — nas demais o registro fica só leitura (👁).
+    const editaveis = new Set((DB.lojas||[]).map(l => l.pk));
     if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--t3);padding:30px">Nenhum registro encontrado.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--t3);padding:30px">Nenhum registro encontrado.</td></tr>';
       return;
     }
     data.forEach(row => {
+      HIST_MAP[row.fact_id] = row;
+      const pend = row.pendente == 1;
       const ok = row.nome_status==='Recebeu';
-      const entregaBadge = row.tipo_entrega
-        ? `<span class="badge badge-blue">${row.tipo_entrega}</span>`
-        : '<span class="dim">—</span>';
+      const podeEditar = editaveis.has(row.loja_fk);
       const cargaBadge = row.tipo_carga
         ? `<span class="badge badge-amber">${row.tipo_carga}</span>`
         : '<span class="dim">—</span>';
+      const acoes = !pend
+        ? `<span class="acao-btn acao-ok" title="Registro completo">✓</span>`
+        : (podeEditar
+            ? `<button class="acao-btn acao-editar" title="Completar campos em branco" onclick="abrirEditorPend(${row.fact_id})">✏️</button>`
+            : `<span class="acao-btn" title="Somente leitura (outra loja)">👁</span>`);
       const tr = document.createElement('tr');
+      tr.id = `hist-row-${row.fact_id}`;
+      tr.className = pend ? 'linha-pend' : 'linha-ok';
       tr.innerHTML = `
         <td>${fmtData(row.data_completa)}</td>
         <td>${row.nome_loja||'—'}</td>
-        <td title="${row.razao_social}">${row.nome_fantasia||row.razao_social||'—'}</td>
+        <td title="${row.razao_social||''}">${row.nome_fantasia||row.razao_social||'—'}</td>
         <td><strong>${row.nota}</strong></td>
         <td class="dim">${row.nome_comprador||'—'}</td>
         <td class="dim">${row.nome_recebedor||'—'}</td>
-        <td>${entregaBadge}</td>
         <td>${cargaBadge}</td>
         <td class="dim" style="font-family:monospace;font-size:12px">${row.hora_chegada||'—'} → ${row.hora_final_rec||'—'}</td>
-        <td>${row.sucesso_flag??'—'}</td>
-        <td><span class="badge ${ok?'badge-green':'badge-amber'}">${row.nome_status||'—'}</span></td>
+        <td><span class="badge ${pend?'badge-rose':(ok?'badge-green':'badge-amber')}">${pend?'⏳ Pendente':(row.nome_status||'—')}</span></td>
         <td class="dim">${row.nome_setor||'—'}</td>
         <td class="dim">${row.nome_usuario||'—'}</td>
+        <td><div class="acoes-cell">${acoes}</div></td>
       `;
       tbody.appendChild(tr);
     });
   } catch(e) { console.error(e); }
+}
+
+/* ── EDITOR INLINE DE PENDÊNCIA ───────────────────────────────────────── */
+// Metadados dos campos que podem ser completados depois (chave = coluna do banco).
+const CAMPOS_PEND_META = {
+  comprador_fk:    { label:'Comprador',              tipo:'select', fonte:'compradores', val:'pk', txt:'nome_comprador' },
+  recebedor_fk:    { label:'Recebedor',              tipo:'select', fonte:'recebedores', val:'pk', txt:'nome_recebedor' },
+  hora_chegada:    { label:'Chegada CPD',            tipo:'time' },
+  hora_liberado:   { label:'Liberado — Faturamento', tipo:'time' },
+  hora_inicio_rec: { label:'Início Descarga',        tipo:'time' },
+  hora_final_rec:  { label:'Fim Recebimento',        tipo:'time' },
+  setor_fk:        { label:'Setor Responsável',      tipo:'select', fonte:'setores',     val:'pk', txt:'nome_setor' },
+  ocorrencia_fk:   { label:'Ocorrência',             tipo:'select', fonte:'ocorrencias', val:'pk', txt:'descricao_ocorrencia' },
+  resolucao:       { label:'Resolução',              tipo:'text' },
+};
+
+// Campos que só se aplicam a um dos resultados (espelha main.py).
+const CAMPOS_SO_RECEBEU  = ['hora_liberado', 'hora_inicio_rec', 'hora_final_rec'];
+const CAMPOS_DIVERGENCIA = ['setor_fk', 'ocorrencia_fk', 'resolucao'];
+
+function camposPendentesDe(row) {
+  let campos = (row.campos_pendentes && row.campos_pendentes.length)
+    ? row.campos_pendentes.slice()
+    : Object.keys(CAMPOS_PEND_META);
+  // Sucesso (flag != 2) não tem divergência; "Não recebeu" (flag == 2) não tem horas
+  // pós-chegada (não houve descarga). Remove o que não se aplica ao Resultado.
+  const remover = Number(row.sucesso_flag) === 2 ? CAMPOS_SO_RECEBEU : CAMPOS_DIVERGENCIA;
+  return campos.filter(k => !remover.includes(k));
+}
+
+// Abre (ou fecha, se já aberto) o editor logo abaixo da linha, só com os campos em branco.
+function abrirEditorPend(factId) {
+  const jaAberto = document.getElementById(`pend-editor-${factId}`);
+  document.querySelectorAll('.pend-editor-row').forEach(el => el.remove());
+  if (jaAberto) return;  // era um toggle para fechar
+
+  const row = HIST_MAP[factId];
+  if (!row) return;
+  const campos = camposPendentesDe(row);
+
+  const campoHtml = campos.map(key => {
+    const meta = CAMPOS_PEND_META[key];
+    if (!meta) return '';
+    const inpId = `pend-${factId}-${key}`;
+    let input;
+    if (meta.tipo === 'select') {
+      const opts = (DB[meta.fonte]||[]).map(o => `<option value="${o[meta.val]}">${o[meta.txt]}</option>`).join('');
+      input = `<select id="${inpId}"><option value="">Selecione...</option>${opts}</select>`;
+    } else if (meta.tipo === 'opcoes') {
+      const opts = meta.opcoes.map(([v,t]) => `<option value="${v}">${t}</option>`).join('');
+      input = `<select id="${inpId}"><option value="">Selecione...</option>${opts}</select>`;
+    } else if (meta.tipo === 'time') {
+      input = `<input type="time" id="${inpId}">`;
+    } else {
+      input = `<input type="text" id="${inpId}" placeholder="${meta.label}">`;
+    }
+    return `<div class="form-group"><label for="${inpId}">${meta.label}</label>${input}</div>`;
+  }).join('');
+
+  // Sem campos aplicáveis (ex.: registro antigo cujos pendentes não valem mais para o
+  // Resultado): não há o que preencher — o botão apenas conclui o registro.
+  const semCampos = campos.length === 0;
+  const grid = semCampos
+    ? '<div class="dim">Nenhum campo pendente para este resultado — clique em Concluir.</div>'
+    : campoHtml;
+  const btnLabel = semCampos ? '✓ Concluir' : '✓ Salvar';
+
+  const tr = document.createElement('tr');
+  tr.id = `pend-editor-${factId}`;
+  tr.className = 'pend-editor-row';
+  tr.innerHTML = `
+    <td colspan="12">
+      <div class="pend-editor">
+        <div class="pend-editor-title">⏳ Completar pendência — NF ${row.nota}</div>
+        <div class="pend-editor-grid">${grid}</div>
+        <div class="pend-editor-actions">
+          <button type="button" class="btn btn-sm btn-cancelar-pend" onclick="cancelarEditorPend(${factId})">✕ Cancelar</button>
+          <button type="button" class="btn btn-sm btn-salvar-pend" onclick="salvarEdicaoPend(${factId})">${btnLabel}</button>
+        </div>
+      </div>
+    </td>`;
+  document.getElementById(`hist-row-${factId}`).after(tr);
+  // Reseta a rolagem horizontal e traz o editor à vista.
+  const wrap = document.querySelector('.table-wrap');
+  if (wrap) wrap.scrollLeft = 0;
+  tr.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function cancelarEditorPend(factId) {
+  const el = document.getElementById(`pend-editor-${factId}`);
+  if (el) el.remove();
+}
+
+// Envia SÓ os campos preenchidos ao backend, que atualiza apenas o que estava em branco.
+async function salvarEdicaoPend(factId) {
+  const row = HIST_MAP[factId];
+  if (!row) return;
+  const campos = camposPendentesDe(row);
+
+  const body = {};
+  let algumPreenchido = false;
+  campos.forEach(key => {
+    const el = document.getElementById(`pend-${factId}-${key}`);
+    if (!el) return;
+    const v = el.value;
+    if (v === '' || v == null) { body[key] = null; return; }
+    body[key] = key.endsWith('_fk') ? +v : v;
+    algumPreenchido = true;
+  });
+  // Quando há campos aplicáveis, exige ao menos um. Sem campos (campos.length === 0),
+  // envia vazio e o servidor apenas conclui o registro.
+  if (campos.length && !algumPreenchido) { showToast('Preencha ao menos um campo antes de salvar.', 'err'); return; }
+
+  try {
+    const r = await fetch(`/api/recebimentos/${factId}`, {
+      method:'PUT', headers:{'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (r.ok) {
+      showToast(d.message || 'Pendência atualizada!', 'ok');
+      cancelarEditorPend(factId);
+      atualizarHistorico();
+      carregarRecentes();  // mantém "Últimos Lançamentos" em sincronia
+    } else {
+      showToast(`Erro: ${d.detail||'Verifique os dados'}`, 'err');
+    }
+  } catch(ex) { showToast('Erro de conexão com o servidor.', 'err'); }
 }
 
 function fmtData(s) {

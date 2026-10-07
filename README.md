@@ -19,6 +19,10 @@ o formato que ferramentas de BI consomem direto).
 
 ## Visão Geral
 
+<div align="center">
+  <img src="docs/screenshots/cpd_formulario.png" alt="Interface do Sistema CPD - Autenticação e Formulário" width="750" />
+</div>
+
 O sistema cobre o registro do recebimento de mercadoria no CPD: uma API REST lança e consulta as notas,
 com autenticação por token e senhas protegidas por hash. O banco usa integridade referencial e um
 modelo dimensional (esquema estrela) com uma dimensão de data pronta para análise. Um front-end simples

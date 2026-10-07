@@ -1,18 +1,65 @@
 """
 cpd_mysql.py — Camada de Banco de Dados MySQL para o Sistema CPD
-Banco: cpd_trabalho | Servidor: localhost | Sem senha (root)
+Conexão lida de config.json (ao lado do .exe), permitindo apontar para o
+servidor MySQL da rede. Ex.: {"host":"192.168.10.177","port":3306,"user":"root",
+"password":"","database":"cpd_trabalho"}.
 """
 
+import os
+import sys
+import json
 import mysql.connector
 from mysql.connector import Error
 from datetime import datetime, date
 
-# ─── Configuração de Conexão ─────────────────────────────────────────────────
+# Vínculo Usuário (CPD) → Loja(s) que pode LANÇAR e EDITAR. ADMIN (Vitor) faz tudo.
+# Nomes batem com dim_usuario_cpd.nome e dim_loja.nome_loja.
+USUARIO_LOJAS = {
+    "Genesis":   ["MATRIZ"],
+    "Katia":     ["MATRIZ"],
+    "Ytalo":     ["MERCADÃO", "MERCADINHO"],
+    "Hortencia": ["FRANCISCANOS"],
+}
+# Supervisores: VEEM o histórico de TODAS as lojas (só leitura), mas continuam
+# lançando/editando apenas nas suas lojas (USUARIO_LOJAS). Não são admin.
+SUPERVISORES = {"Genesis"}
+
+# ─── Configuração de Conexão (via config.json) ───────────────────────────────
+def _caminho_config():
+    """config.json fica ao lado do executável quando empacotado (editável por
+    instalação); no código-fonte, ao lado deste arquivo."""
+    if getattr(sys, "frozen", False):
+        base = os.path.dirname(sys.executable)
+    else:
+        base = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base, "config.json")
+
+def _carregar_config():
+    # Padrão = servidor central no PC do Vitor (IP fixo). O .177 ficou obsoleto.
+    cfg = {"host": "192.168.10.52", "port": 3306, "user": "root",
+           "password": "", "database": "cpd_trabalho"}
+    try:
+        with open(_caminho_config(), "r", encoding="utf-8") as f:
+            dados = json.load(f)
+        for k in ("host", "user", "database"):
+            if dados.get(k):
+                cfg[k] = dados[k]
+        if dados.get("port"):
+            cfg["port"] = int(dados["port"])
+        if "password" in dados:  # senha vazia é válida
+            cfg["password"] = dados["password"]
+    except Exception:
+        pass  # sem config.json → usa o padrão
+    return cfg
+
+_CFG = _carregar_config()
+
 MYSQL_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "",
-    "database": "cpd_trabalho",
+    "host": _CFG["host"],
+    "port": int(_CFG["port"]),
+    "user": _CFG["user"],
+    "password": _CFG["password"],
+    "database": _CFG["database"],
     "charset": "utf8mb4",
     "collation": "utf8mb4_unicode_ci",
     "autocommit": False,
@@ -20,9 +67,10 @@ MYSQL_CONFIG = {
 }
 
 MYSQL_INIT_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "",
+    "host": _CFG["host"],
+    "port": int(_CFG["port"]),
+    "user": _CFG["user"],
+    "password": _CFG["password"],
     "charset": "utf8mb4",
     "connection_timeout": 10,
 }
@@ -68,6 +116,36 @@ def obter_ou_criar_data_fk(conn, data_str: str) -> int:
     return pk
 
 
+def _migrar_colunas_pendente(cur, conn):
+    """
+    Migração idempotente: adiciona as colunas de pendência em bancos MySQL que já
+    existiam antes desta funcionalidade. Seguro rodar sempre.
+    """
+    cur.execute("""
+        SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'fact_recebimento'
+    """)
+    existentes = {r[0] for r in cur.fetchall()}
+    if not existentes:
+        return  # tabela ainda não existe — o CREATE cuidará das colunas
+    if "pendente" not in existentes:
+        cur.execute("ALTER TABLE fact_recebimento ADD COLUMN pendente TINYINT NOT NULL DEFAULT 0")
+    if "campos_pendentes" not in existentes:
+        cur.execute("ALTER TABLE fact_recebimento ADD COLUMN campos_pendentes TEXT DEFAULT NULL")
+
+    # Corrige o tipo antigo de tipo_entrega: era ENUM('Mix','Volume') e não aceitava
+    # 'CIF'/'TRANSFERENCIA' (em sql_mode STRICT quebrava o INSERT). Migra para VARCHAR(30).
+    cur.execute("""
+        SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'fact_recebimento'
+          AND COLUMN_NAME = 'tipo_entrega'
+    """)
+    r = cur.fetchone()
+    if r and str(r[0]).lower() != "varchar":
+        cur.execute("ALTER TABLE fact_recebimento MODIFY COLUMN tipo_entrega VARCHAR(30) DEFAULT NULL")
+    conn.commit()
+
+
 def init_mysql():
     print("Inicializando banco MySQL: cpd_trabalho...")
     try:
@@ -85,17 +163,9 @@ def init_mysql():
     conn = get_connection()
     cur = conn.cursor()
 
-    # Desativa chaves estrangeiras temporariamente para fazer a limpeza sem erros
-    cur.execute("SET FOREIGN_KEY_CHECKS = 0;")
-    cur.execute("DROP TABLE IF EXISTS fact_recebimento;")
-    cur.execute("DROP TABLE IF EXISTS dim_resolucao;")
-    cur.execute("DROP TABLE IF EXISTS dim_status;")
-    cur.execute("DROP TABLE IF EXISTS dim_ocorrencia;")
-    cur.execute("DROP TABLE IF EXISTS dim_setor;")
-    cur.execute("DROP TABLE IF EXISTS dim_recebedor;")
-    cur.execute("DROP TABLE IF EXISTS dim_comprador;")
-    cur.execute("DROP TABLE IF EXISTS dim_loja;")
-    cur.execute("SET FOREIGN_KEY_CHECKS = 1;")
+    # PERSISTÊNCIA: as tabelas NÃO são mais apagadas a cada inicialização.
+    # Tudo usa CREATE TABLE IF NOT EXISTS + INSERT IGNORE (idempotente), preservando
+    # os dados já existentes — inclusive recebimentos pendentes aguardando complemento.
 
     ddl_statements = [
         """
@@ -113,6 +183,15 @@ def init_mysql():
         CREATE TABLE IF NOT EXISTS dim_loja (
             pk        INT AUTO_INCREMENT PRIMARY KEY,
             nome_loja VARCHAR(120) UNIQUE NOT NULL
+        ) ENGINE=InnoDB;
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS usuario_loja (
+            usuario_fk INT NOT NULL,
+            loja_fk    INT NOT NULL,
+            PRIMARY KEY (usuario_fk, loja_fk),
+            FOREIGN KEY (usuario_fk) REFERENCES dim_usuario_cpd(pk),
+            FOREIGN KEY (loja_fk)    REFERENCES dim_loja(pk)
         ) ENGINE=InnoDB;
         """,
         """
@@ -182,10 +261,13 @@ def init_mysql():
             fact_id       INT AUTO_INCREMENT PRIMARY KEY,
             nota          VARCHAR(50)  NOT NULL,
             obs           TEXT,
-            tipo_entrega  ENUM('Mix','Volume') DEFAULT NULL,
+            tipo_entrega  VARCHAR(30) DEFAULT NULL,
             tipo_carga    VARCHAR(50),
             sucesso_flag  TINYINT NOT NULL DEFAULT 0,
             resolucao     VARCHAR(300),
+
+            pendente         TINYINT NOT NULL DEFAULT 0,
+            campos_pendentes TEXT DEFAULT NULL,
 
             data_fk       INT NOT NULL,
             loja_fk       INT NOT NULL,
@@ -230,6 +312,7 @@ def init_mysql():
     for ddl in ddl_statements:
         cur.execute(ddl)
     conn.commit()
+    _migrar_colunas_pendente(cur, conn)
     print("  Tabelas criadas/verificadas.")
     _seed(conn, cur)
 
@@ -239,20 +322,25 @@ def init_mysql():
 
 
 def _seed(conn, cur):
-    lojas = ["LOJA SUL", "LOJA CENTRAL", "LOJA OESTE", "LOJA SHOPPING"]
-    for l in lojas:
-        cur.execute("INSERT IGNORE INTO dim_loja (nome_loja) VALUES (%s)", (l,))
+    # Listas gerenciadas pelo admin (lojas/compradores/recebedores): semeadas só
+    # na PRIMEIRA vez (tabela vazia). Assim, exclusões feitas depois pelo Cadastro
+    # NÃO voltam a cada abertura do app.
+    def _vazia(tabela):
+        cur.execute(f"SELECT COUNT(*) FROM {tabela}")
+        return cur.fetchone()[0] == 0
 
-    compradores = ["Bruno", "Carla", "Andresa", "Elaine", "Diego", "Fabio"]
-    for c in compradores:
-        cur.execute("INSERT IGNORE INTO dim_comprador (nome_comprador) VALUES (%s)", (c,))
+    if _vazia("dim_loja"):
+        for l in ["FRANCISCANOS", "MATRIZ", "MERCADINHO", "MERCADÃO"]:
+            cur.execute("INSERT IGNORE INTO dim_loja (nome_loja) VALUES (%s)", (l,))
 
-    recebedores = [
-        "Alexandre", "Gustavo", "Rafael", "Tiago",
-        "Vinicius", "Leonardo", "Marcelo", "Rodrigo"
-    ]
-    for r in recebedores:
-        cur.execute("INSERT IGNORE INTO dim_recebedor (nome_recebedor) VALUES (%s)", (r,))
+    if _vazia("dim_comprador"):
+        for c in ["Allan", "Ana", "Andresa", "Edna", "Jhonne", "Mario"]:
+            cur.execute("INSERT IGNORE INTO dim_comprador (nome_comprador) VALUES (%s)", (c,))
+
+    if _vazia("dim_recebedor"):
+        for r in ["Thalis", "Edson", "Israel", "Sergio",
+                  "Thiago", "Rildo", "Robson", "Pedro"]:
+            cur.execute("INSERT IGNORE INTO dim_recebedor (nome_recebedor) VALUES (%s)", (r,))
 
     setores = ["Comercial", "Fornecedor", "CPD"]
     for s in setores:
@@ -262,15 +350,15 @@ def _seed(conn, cur):
     for st in statuses:
         cur.execute("INSERT IGNORE INTO dim_status (nome_status) VALUES (%s)", (st,))
 
-    # Usuário admin de DEMONSTRAÇÃO (troque a senha em produção; use o .env/hash próprio)
+    # Seed default admin user
     from passlib.hash import sha256_crypt
-    cur.execute("SELECT COUNT(*) FROM dim_usuario_cpd WHERE email = %s", ("admin@exemplo.com",))
+    cur.execute("SELECT COUNT(*) FROM dim_usuario_cpd WHERE email = %s", ("vitor@opcao.com.br",))
     if cur.fetchone()[0] == 0:
-        admin_hash = sha256_crypt.hash("admin123")
+        admin_hash = sha256_crypt.hash("metrika123")
         cur.execute("""
             INSERT INTO dim_usuario_cpd (nome, email, senha_hash, cargo, ativo)
             VALUES (%s, %s, %s, %s, 1)
-        """, ("Administrador", "admin@exemplo.com", admin_hash, "ADMIN"))
+        """, ("Vitor", "vitor@opcao.com.br", admin_hash, "ADMIN"))
 
     ocorrencias = [
         "Divergência de Custo", "Divergência na Quantidade", "Sem XML",
@@ -419,6 +507,24 @@ def _seed(conn, cur):
                 INSERT IGNORE INTO dim_resolucao (setor_fk, ocorrencia_fk, descricao_resolucao)
                 VALUES (%s, %s, %s)
             """, (s_id, o_id, res_desc))
+
+    # Marca supervisores (veem todo o histórico, só leitura). Não mexe no ADMIN.
+    for sup in SUPERVISORES:
+        cur.execute("UPDATE dim_usuario_cpd SET cargo='SUPERVISOR' WHERE nome=%s AND cargo<>'ADMIN'", (sup,))
+
+    # Vínculo Usuário (CPD) → Loja(s) que pode lançar. ADMIN vê todas. Idempotente,
+    # resolvido por nome; usuário sem vínculo continua vendo todas as lojas.
+    for uname, lojas in USUARIO_LOJAS.items():
+        cur.execute("SELECT pk FROM dim_usuario_cpd WHERE nome = %s", (uname,))
+        u = cur.fetchone()
+        if not u:
+            continue
+        for lname in lojas:
+            cur.execute("SELECT pk FROM dim_loja WHERE nome_loja = %s", (lname,))
+            l = cur.fetchone()
+            if l:
+                cur.execute("INSERT IGNORE INTO usuario_loja (usuario_fk, loja_fk) VALUES (%s, %s)",
+                            (u[0], l[0]))
 
     conn.commit()
     print("  Dados semente inseridos.")

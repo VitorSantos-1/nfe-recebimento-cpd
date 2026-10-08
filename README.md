@@ -17,16 +17,34 @@ o formato que ferramentas de BI consomem direto).
 
 ---
 
-## Visão Geral
+## Visão Geral das Abas do Sistema (Acesso Administrador)
+
+> **Garantia de Privacidade & Segurança:** Todas as marcas corporativas, logins e nomes de operadores/colaboradores foram ofuscados com filtro de desfoque (*privacy blur*) para proteção integral de dados sensíveis e conformidade com a LGPD.
+
+### 1. Novo Lançamento (Entrada & Métricas Operacionais)
+Formulário de registro operacional de recebimento: entrada de NF-e, vinculação de fornecedor homologado, seleção de tipo de entrega (CIF/Transferência) e cálculo automático dos tempos de liberação fiscal, espera de doca e descarga.
 
 <div align="center">
-  <img src="docs/screenshots/cpd_formulario.png" alt="Interface do Sistema CPD - Autenticação e Formulário" width="750" />
+  <img src="docs/screenshots/01-novo-lancamento.png" alt="Aba 1 - Novo Lançamento e Métricas Operacionais" width="850" />
 </div>
 
-O sistema cobre o registro do recebimento de mercadoria no CPD: uma API REST lança e consulta as notas,
-com autenticação por token e senhas protegidas por hash. O banco usa integridade referencial e um
-modelo dimensional (esquema estrela) com uma dimensão de data pronta para análise. Um front-end simples
-é servido pela própria API, e o projeto pode ser empacotado em um executável para distribuição nas lojas.
+---
+
+### 2. Consulta & Histórico de Recebimentos
+Grid dinâmico de conferência com filtros rápidos por NF, fornecedor e status. Exibe rastreabilidade de horários, setor responsável e sinalização visual imediata entre recebimentos completos e pendências que exigem complemento.
+
+<div align="center">
+  <img src="docs/screenshots/02-historico-consultas.png" alt="Aba 2 - Consulta e Histórico de Recebimentos" width="850" />
+</div>
+
+---
+
+### 3. Gestão de Cadastros (Visão Administrador)
+Módulo restrito ao perfil de Administrador (`ADMIN`): parametrização de unidades de loja, cadastro e validação de fornecedores (Razão Social e CNPJ/CPF), matriz de regras de resolução de divergências e gestão de credenciais e permissões de usuários do CPD.
+
+<div align="center">
+  <img src="docs/screenshots/03-cadastros-admin.png" alt="Aba 3 - Gestão de Cadastros e Usuários CPD" width="850" />
+</div>
 
 ## Contexto de Negócio
 

@@ -1051,9 +1051,131 @@ function initTema() {
 window.addEventListener('load', () => {
   initTema();
   document.getElementById('campo-data').valueAsDate = new Date();
-  if (AUTH.token) {
+
+  // Suporte a modo demonstração/captura via parâmetros de URL
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('admin') === '1') {
+    const adminToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwibm9tZSI6IkFkbWluaXN0cmFkb3IiLCJjYXJnbyI6IkFETUlOIn0.AmVku1r-YuG3mJKOFbYCSqeGIfzd2QmZymgM5Vg6oG4';
+    AUTH = { token: adminToken, nome: 'Administrador', cargo: 'ADMIN', pk: '1' };
+    sessionStorage.setItem('cpd_token', adminToken);
+    sessionStorage.setItem('cpd_nome', 'Administrador');
+    sessionStorage.setItem('cpd_cargo', 'ADMIN');
+    sessionStorage.setItem('cpd_pk', '1');
+    mostrarApp();
+    const ls = document.getElementById('login-screen');
+    if (ls) {
+      ls.style.display = 'none';
+      ls.classList.add('hidden');
+    }
+
+    const tab = urlParams.get('tab') || 'form';
+    switchTab(tab);
+
+    if (tab === 'form') {
+      const elLoja = document.getElementById('campo-loja');
+      if (elLoja) elLoja.innerHTML = '<option value="1" selected>FRANCISCANOS</option><option value="2">MATRIZ</option><option value="3">MERCADINHO</option>';
+      const elNota = document.getElementById('campo-nota'); if (elNota) elNota.value = '48291';
+      const elForn = document.getElementById('campo-fornecedor'); if (elForn) elForn.value = 'M. DIAS BRANCO S.A.';
+      const elComp = document.getElementById('campo-comprador'); if (elComp) elComp.innerHTML = '<option value="1" selected>Allan (Comercial)</option>';
+      const elRec  = document.getElementById('campo-recebedor'); if (elRec) elRec.innerHTML = '<option value="1" selected>Thalis (Recebimento)</option>';
+      const elEnt  = document.getElementById('campo-entrega'); if (elEnt) elEnt.value = 'CIF';
+      const elHCh  = document.getElementById('campo-hora-chegada'); if (elHCh) elHCh.value = '08:15';
+      const elHLib = document.getElementById('campo-hora-liberado'); if (elHLib) elHLib.value = '08:35';
+      const elHIni = document.getElementById('campo-hora-ini-rec'); if (elHIni) elHIni.value = '08:45';
+      const elHFim = document.getElementById('campo-hora-fim-rec'); if (elHFim) elHFim.value = '09:30';
+      const elSuc  = document.getElementById('campo-sucesso'); if (elSuc) elSuc.value = '1';
+      const mNfe = document.getElementById('m-nfe'); if (mNfe) mNfe.textContent = '20';
+      const mEsp = document.getElementById('m-esp'); if (mEsp) mEsp.textContent = '10';
+      const mRec = document.getElementById('m-rec'); if (mRec) mRec.textContent = '45';
+    } else if (tab === 'history') {
+      const tbody = document.getElementById('historico-tabela');
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr class="linha-ok">
+            <td>08/10/2026</td>
+            <td>FRANCISCANOS</td>
+            <td>M. Dias Branco</td>
+            <td><strong>48291</strong></td>
+            <td class="dim">Allan</td>
+            <td class="dim">Thalis</td>
+            <td><span class="badge badge-amber">PALETIZADA</span></td>
+            <td class="dim" style="font-family:monospace;font-size:12px">08:15 → 09:30</td>
+            <td><span class="badge badge-green">Recebeu</span></td>
+            <td class="dim">Comercial</td>
+            <td class="dim">Vitor</td>
+            <td><div class="acoes-cell"><span class="acao-btn acao-ok" title="Registro completo">✓</span></div></td>
+          </tr>
+          <tr class="linha-ok">
+            <td>08/10/2026</td>
+            <td>MATRIZ</td>
+            <td>Ambev</td>
+            <td><strong>50182</strong></td>
+            <td class="dim">Ana</td>
+            <td class="dim">Edson</td>
+            <td><span class="badge badge-amber">BATIDA</span></td>
+            <td class="dim" style="font-family:monospace;font-size:12px">09:00 → 10:45</td>
+            <td><span class="badge badge-green">Recebeu</span></td>
+            <td class="dim">Comercial</td>
+            <td class="dim">Vitor</td>
+            <td><div class="acoes-cell"><span class="acao-btn acao-ok" title="Registro completo">✓</span></div></td>
+          </tr>
+          <tr class="linha-pend">
+            <td>08/10/2026</td>
+            <td>MERCADINHO</td>
+            <td>Nestlé</td>
+            <td><strong>51204</strong></td>
+            <td class="dim">Andresa</td>
+            <td class="dim">Israel</td>
+            <td><span class="badge badge-amber">PALETIZADA</span></td>
+            <td class="dim" style="font-family:monospace;font-size:12px">10:10 → —</td>
+            <td><span class="badge badge-rose">⏳ Pendente</span></td>
+            <td class="dim">Fornecedor</td>
+            <td class="dim">Vitor</td>
+            <td><div class="acoes-cell"><button class="acao-btn acao-editar" title="Completar">✏️</button></div></td>
+          </tr>
+          <tr class="linha-ok">
+            <td>08/10/2026</td>
+            <td>FRANCISCANOS</td>
+            <td>M. Dias Branco</td>
+            <td><strong>52890</strong></td>
+            <td class="dim">Allan</td>
+            <td class="dim">Thalis</td>
+            <td><span class="badge badge-amber">PALETIZADA</span></td>
+            <td class="dim" style="font-family:monospace;font-size:12px">11:00 → 12:00</td>
+            <td><span class="badge badge-green">Recebeu</span></td>
+            <td class="dim">Comercial</td>
+            <td class="dim">Vitor</td>
+            <td><div class="acoes-cell"><span class="acao-btn acao-ok" title="Registro completo">✓</span></div></td>
+          </tr>
+        `;
+      }
+    } else if (tab === 'admin') {
+      const uNome = document.getElementById('adm-usr-nome'); if (uNome) uNome.value = 'Fernando Alves';
+      const uEmail = document.getElementById('adm-usr-email'); if (uEmail) uEmail.value = 'operador@empresa.com.br';
+      const fRazao = document.getElementById('adm-forn-razao'); if (fRazao) fRazao.value = 'DISTRIBUIDORA ALIMENTOS S.A.';
+      const fFant = document.getElementById('adm-forn-fantasia'); if (fFant) fFant.value = 'Distribuidora Alimentos';
+      const fCnpj = document.getElementById('adm-forn-cnpj'); if (fCnpj) fCnpj.value = '04.821.993/0001-44';
+    }
+  } else if (AUTH.token) {
     mostrarApp();
   }
+
+  if (urlParams.get('blur') === '1') {
+    const st = document.createElement('style');
+    st.id = 'privacy-blur-style';
+    st.textContent = `
+      .brand-name, .brand-icon, .brand-tag, .login-title, .login-logo,
+      #user-nome, #badge-usuario-logado, #user-avatar,
+      #historico-tabela td:nth-child(5), #historico-tabela td:nth-child(6), #historico-tabela td:nth-child(11),
+      #campo-comprador, #campo-recebedor,
+      #adm-usr-nome, #adm-comprador, #adm-recebedor, #login-email {
+        filter: blur(6px) !important;
+        user-select: none;
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
   // Tecla Enter nos campos de login
   ['login-email','login-senha','cad-nome','cad-email','cad-senha','cad-cargo'].forEach(id => {
     document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') { e.preventDefault(); id.startsWith('login-') ? fazerLogin() : criarConta(); } });
